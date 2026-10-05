@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BiteHub - Fast & Delicious Campus Food Delivery</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Header Navigation Container -->
+    <div id="navbar-container"></div>
+
+    <main class="container my-4">
+        <!-- Hero Section -->
+        <section class="hero-banner mb-5">
+            <div class="row align-items-center">
+                <div class="col-lg-7">
+                    <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold mb-3">
+                        <i class="bi bi-fire me-1"></i> Special Offer: Use code <strong>BITE50</strong> for 50% OFF!
+                    </span>
+                    <h1 class="display-4 fw-extrabold text-dark mb-3">
+                        Craving Good Food? <br>
+                        <span style="color: var(--bh-primary);">Delivered in Minutes.</span>
+                    </h1>
+                    <p class="lead text-muted mb-4">
+                        Discover top campus eateries, gourmet burgers, wood-fired pizzas, and traditional biryani delivered right to your doorstep.
+                    </p>
+
+                    <!-- Food & Restaurant Search Bar -->
+                    <div class="card p-2 shadow-sm border-0 rounded-pill mb-3" style="max-width: 580px;">
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent border-0 ps-3">
+                                <i class="bi bi-search text-muted fs-5"></i>
+                            </span>
+                            <input type="text" id="heroSearchInput" class="form-control border-0 shadow-none" placeholder="Search burgers, pizzas, restaurants...">
+                            <button class="btn btn-bh-primary rounded-pill px-4" onclick="handleSearch()">Search</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-5 text-center d-none d-lg-block">
+                    <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&auto=format&fit=crop" 
+                         alt="Delicious Food" class="img-fluid rounded-4 shadow-lg" style="transform: rotate(2deg); max-height: 380px; object-fit: cover;">
+                </div>
+            </div>
+        </section>
+
+        <!-- Cuisine Categories -->
+        <section class="mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="fw-bold m-0"><i class="bi bi-grid-fill text-primary me-2"></i>Explore Categories</h3>
+                <a href="/restaurants.html" class="text-decoration-none fw-semibold">View All <i class="bi bi-arrow-right"></i></a>
+            </div>
+            <div class="row g-3 text-center">
+                <div class="col-6 col-md-4 col-lg-2">
+                    <a href="/restaurants.html?cuisine=American" class="text-decoration-none">
+                        <div class="bh-card p-3 bh-card-hover h-100">
+                            <img src="/images/cat_burger.jpg" alt="Burgers" class="rounded-3 mb-2" style="width:80px;height:80px;object-fit:cover;">
+                            <h6 class="fw-bold text-dark m-0">Burgers</h6>
+                            <small class="text-muted">American, Fries</small>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2">
+                    <a href="/restaurants.html?cuisine=Italian" class="text-decoration-none">
+                        <div class="bh-card p-3 bh-card-hover h-100">
+                            <img src="/images/cat_pizza.jpg" alt="Pizzas" class="rounded-3 mb-2" style="width:80px;height:80px;object-fit:cover;">
+                            <h6 class="fw-bold text-dark m-0">Pizzas</h6>
+                            <small class="text-muted">Italian, Pasta</small>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2">
+                    <a href="/restaurants.html?cuisine=Indian" class="text-decoration-none">
+                        <div class="bh-card p-3 bh-card-hover h-100">
+                            <img src="/images/cat_biryani.jpg" alt="Biryani" class="rounded-3 mb-2" style="width:80px;height:80px;object-fit:cover;">
+                            <h6 class="fw-bold text-dark m-0">Biryani &amp; Curry</h6>
+                            <small class="text-muted">Indian, Spices</small>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2">
+                    <a href="/restaurants.html?cuisine=Japanese" class="text-decoration-none">
+                        <div class="bh-card p-3 bh-card-hover h-100">
+                            <img src="/images/cat_sushi.jpg" alt="Japanese" class="rounded-3 mb-2" style="width:80px;height:80px;object-fit:cover;">
+                            <h6 class="fw-bold text-dark m-0">Japanese</h6>
+                            <small class="text-muted">Sushi &amp; Ramen</small>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2">
+                    <a href="/restaurants.html" class="text-decoration-none">
+                        <div class="bh-card p-3 bh-card-hover h-100">
+                            <img src="/images/cat_fastfood.jpg" alt="Fast Food" class="rounded-3 mb-2" style="width:80px;height:80px;object-fit:cover;">
+                            <h6 class="fw-bold text-dark m-0">Fast Food</h6>
+                            <small class="text-muted">Crispy Wings</small>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2">
+                    <a href="/restaurants.html" class="text-decoration-none">
+                        <div class="bh-card p-3 bh-card-hover h-100">
+                            <img src="/images/cat_beverages.jpg" alt="Beverages" class="rounded-3 mb-2" style="width:80px;height:80px;object-fit:cover;">
+                            <h6 class="fw-bold text-dark m-0">Beverages</h6>
+                            <small class="text-muted">Shakes &amp; Tea</small>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Featured Restaurants Section -->
+        <section class="mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold m-0"><i class="bi bi-star-fill text-warning me-2"></i>Top Rated Restaurants</h3>
+                    <p class="text-muted m-0">Popular verified kitchens around campus</p>
+                </div>
+                <a href="/restaurants.html" class="btn btn-outline-secondary rounded-pill px-3">See All Restaurants</a>
+            </div>
+
+            <div class="row g-4" id="featuredRestaurantsRow">
+                <!-- Dynamically loaded via API -->
+                <div class="col-12 text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="text-muted mt-2">Loading restaurants...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works Section -->
+        <section class="my-5 py-4 bg-white rounded-4 p-4 border">
+            <h3 class="fw-bold text-center mb-4">How BiteHub Works</h3>
+            <div class="row g-4 text-center">
+                <div class="col-md-3">
+                    <div class="stat-icon bg-light text-primary mx-auto mb-3">
+                        <i class="bi bi-search fs-3"></i>
+                    </div>
+                    <h5 class="fw-bold">1. Select Food</h5>
+                    <p class="text-muted small">Browse verified local restaurants and mouth-watering menus.</p>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-icon bg-light text-warning mx-auto mb-3">
+                        <i class="bi bi-bag-check fs-3"></i>
+                    </div>
+                    <h5 class="fw-bold">2. Place Order</h5>
+                    <p class="text-muted small">Customize with coupons and choose simulated cards, mobile banking, or COD.</p>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-icon bg-light text-info mx-auto mb-3">
+                        <i class="bi bi-geo-alt fs-3"></i>
+                    </div>
+                    <h5 class="fw-bold">3. Real-time Tracking</h5>
+                    <p class="text-muted small">Watch status change live from kitchen preparation to rider pickup.</p>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-icon bg-light text-success mx-auto mb-3">
+                        <i class="bi bi-heart-fill fs-3"></i>
+                    </div>
+                    <h5 class="fw-bold">4. Enjoy & Review</h5>
+                    <p class="text-muted small">Receive fresh, hot food and share your feedback with the community.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Promotional Banner -->
+        <section class="bg-dark text-white rounded-4 p-5 my-5 text-center position-relative overflow-hidden">
+            <div class="position-relative z-1">
+                <h2 class="fw-extrabold mb-3">Own a Restaurant or Want to Deliver?</h2>
+                <p class="lead text-light mb-4" style="max-width: 600px; margin: 0 auto;">
+                    Partner with BiteHub to grow your sales or register as a delivery rider with flexible hours.
+                </p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="/register.html?role=restaurant" class="btn btn-warning fw-bold px-4 py-2 rounded-pill">Register Restaurant</a>
+                    <a href="/register.html?role=delivery" class="btn btn-outline-light fw-bold px-4 py-2 rounded-pill">Join as Rider</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <h5 class="text-white fw-bold"><i class="bi bi-bag-heart-fill text-warning me-2"></i>bitehub</h5>
+                    <p class="small text-secondary">
+                        A university project Food Delivery Management System built with Java Spring Boot, MySQL, Spring Security, Bootstrap 5, and JavaScript.
+                    </p>
+                </div>
+                <div class="col-md-2 col-6">
+                    <h6 class="text-white fw-bold mb-3">Quick Links</h6>
+                    <ul class="list-unstyled small">
+                        <li class="mb-2"><a href="/restaurants.html">Restaurants</a></li>
+                        <li class="mb-2"><a href="/login.html">Demo Login</a></li>
+                        <li class="mb-2"><a href="/register.html">Sign Up</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3 col-6">
+                    <h6 class="text-white fw-bold mb-3">Portals</h6>
+                    <ul class="list-unstyled small">
+                        <li class="mb-2"><a href="/customer-dashboard.html">Customer Dashboard</a></li>
+                        <li class="mb-2"><a href="/restaurant-dashboard.html">Restaurant Dashboard</a></li>
+                        <li class="mb-2"><a href="/delivery-dashboard.html">Delivery Dashboard</a></li>
+                        <li class="mb-2"><a href="/admin-dashboard.html">Admin Dashboard</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h6 class="text-white fw-bold mb-3">Demo Credentials</h6>
+                    <div class="bg-secondary bg-opacity-25 p-3 rounded small">
+                        <div><strong>Admin:</strong> admin@bitehub.com / admin123</div>
+                        <div><strong>Restaurant:</strong> burger@bitehub.com / rest123</div>
+                        <div><strong>Rider:</strong> rider1@bitehub.com / rider123</div>
+                        <div><strong>Customer:</strong> customer@bitehub.com / cust123</div>
+                    </div>
+                </div>
+            </div>
+            <hr class="border-secondary my-4">
+            <div class="text-center small text-secondary">
+                &copy; 2026 BiteHub Food Delivery Management System. Developed for Web Development Academic Project.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- BiteHub Core API JS -->
+    <script src="/js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            renderNavbar('home');
+            loadFeaturedRestaurants();
+        });
+
+        function handleSearch() {
+            const query = document.getElementById('heroSearchInput').value.trim();
+            if (query) {
+                window.location.href = `/restaurants.html?query=${encodeURIComponent(query)}`;
+            } else {
+                window.location.href = '/restaurants.html';
+            }
+        }
+
+        document.getElementById('heroSearchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSearch();
+        });
+
+        async function loadFeaturedRestaurants() {
+            const container = document.getElementById('featuredRestaurantsRow');
+            try {
+                const restaurants = await apiRequest('/restaurants');
+                if (!restaurants || restaurants.length === 0) {
+                    container.innerHTML = `<div class="col-12 text-center text-muted py-4">No verified restaurants available at the moment.</div>`;
+                    return;
+                }
+
+                container.innerHTML = restaurants.slice(0, 6).map(r => `
+                    <div class="col-md-6 col-lg-4">
+                        <div class="bh-card bh-card-hover h-100 d-flex flex-column">
+                            <div class="restaurant-img-wrap">
+                                <img src="${r.imageUrl || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600'}" alt="${r.name}">
+                                <div class="rating-pill">
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                    <span>${r.rating ? r.rating.toFixed(1) : '4.5'}</span>
+                                    <small class="text-muted">(${r.totalReviews || 0})</small>
+                                </div>
+                            </div>
+                            <div class="p-3 d-flex flex-column flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="fw-bold text-dark m-0">${r.name}</h5>
+                                    <span class="badge ${r.open ? 'bg-success' : 'bg-secondary'}">${r.open ? 'Open Now' : 'Closed'}</span>
+                                </div>
+                                <p class="text-muted small mb-2 text-truncate-2">${r.description || 'Delicious freshly prepared meals.'}</p>
+                                <div class="small text-secondary mb-3">
+                                    <i class="bi bi-geo-alt me-1 text-danger"></i>${r.address || 'Campus Central'}
+                                    <span class="mx-2">&bull;</span>
+                                    <span class="badge bg-light text-dark border">${r.cuisineType || 'General'}</span>
+                                </div>
+                                <div class="mt-auto pt-2 border-top d-flex justify-content-between align-items-center">
+                                    <small class="text-muted"><i class="bi bi-clock me-1"></i>20-30 mins</small>
+                                    <a href="/restaurant-detail.html?id=${r.id}" class="btn btn-sm btn-bh-primary px-3 rounded-pill">
+                                        View Menu <i class="bi bi-arrow-right ms-1"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                container.innerHTML = `<div class="col-12 text-center text-danger py-4">Failed to load restaurants: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

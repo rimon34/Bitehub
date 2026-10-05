@@ -1,0 +1,774 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BiteHub - Restaurant Management Portal</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+    <!-- Header Navigation Container -->
+    <div id="navbar-container"></div>
+
+    <main class="container-fluid px-lg-5 my-4">
+        <!-- Restaurant Header & KPIs -->
+        <div class="bh-card p-4 mb-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <span class="badge bg-primary px-3 py-1 mb-1">Restaurant Partner Portal</span>
+                    <h2 class="fw-extrabold text-dark m-0" id="restHeaderName">My Restaurant</h2>
+                    <p class="text-muted small m-0" id="restHeaderDetails">Loading details...</p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button id="storeStatusBtn" class="btn btn-outline-success fw-bold px-3 rounded-pill" onclick="toggleStoreStatus()">
+                        <i class="bi bi-power me-1"></i>Open Store
+                    </button>
+                    <a href="/reports.html" class="btn btn-bh-primary fw-semibold px-3 rounded-pill">
+                        <i class="bi bi-graph-up me-1"></i>Sales Reports
+                    </a>
+                </div>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="row g-3 mt-3">
+                <div class="col-6 col-md-4 col-lg-2">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-warning-subtle text-warning"><i class="bi bi-clock"></i></div>
+                        <div>
+                            <small class="text-muted d-block">Pending</small>
+                            <h4 class="fw-bold m-0" id="statPending">0</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-info-subtle text-info"><i class="bi bi-fire"></i></div>
+                        <div>
+                            <small class="text-muted d-block">Active</small>
+                            <h4 class="fw-bold m-0" id="statActive">0</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-success-subtle text-success"><i class="bi bi-check2-all"></i></div>
+                        <div>
+                            <small class="text-muted d-block">Completed</small>
+                            <h4 class="fw-bold m-0" id="statCompleted">0</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-danger-subtle text-danger"><i class="bi bi-x-circle"></i></div>
+                        <div>
+                            <small class="text-muted d-block">Cancelled</small>
+                            <h4 class="fw-bold m-0" id="statCancelled">0</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-8 col-lg-4">
+                    <div class="stat-card bg-primary text-white">
+                        <div class="stat-icon bg-white text-primary"><i class="bi bi-currency-dollar"></i></div>
+                        <div>
+                            <small class="text-white-50 d-block">Total Revenue</small>
+                            <h3 class="fw-bold m-0 text-white" id="statRevenue">$0.00</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-pills mb-4 gap-2" id="dashTabs">
+            <li class="nav-item">
+                <button class="nav-link active fw-semibold" data-bs-toggle="pill" data-bs-target="#ordersTab">
+                    <i class="bi bi-list-task me-1"></i>Order Management Queue
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-semibold" data-bs-toggle="pill" data-bs-target="#menuTab" onclick="loadMenuItems()">
+                    <i class="bi bi-menu-button-wide me-1"></i>Menu Management
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-semibold" data-bs-toggle="pill" data-bs-target="#profileTab">
+                    <i class="bi bi-gear me-1"></i>Restaurant Profile
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Contents -->
+        <div class="tab-content">
+            <!-- 1. Order Management Tab -->
+            <div class="tab-pane fade show active" id="ordersTab">
+                <div class="bh-card p-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                        <h5 class="fw-bold m-0">Live Orders Queue</h5>
+                        <div class="d-flex gap-2">
+                            <select id="orderFilterStatus" class="form-select form-select-sm" onchange="renderFilteredOrders()">
+                                <option value="ALL">All Statuses</option>
+                                <option value="PLACED">Pending (Placed)</option>
+                                <option value="CONFIRMED">Confirmed</option>
+                                <option value="PREPARING">Preparing</option>
+                                <option value="READY_FOR_PICKUP">Ready for Pickup</option>
+                                <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
+                                <option value="DELIVERED">Delivered</option>
+                                <option value="CANCELLED">Cancelled</option>
+                            </select>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="loadRestaurantOrders()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table align-middle table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Order #</th>
+                                    <th>Customer & Address</th>
+                                    <th>Items Ordered</th>
+                                    <th>Total & Payment</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ordersTableBody">
+                                <!-- Dynamic orders -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Menu Management Tab -->
+            <div class="tab-pane fade" id="menuTab">
+                <div class="bh-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold m-0">Food Items & Categories</h5>
+                        <button class="btn btn-bh-primary btn-sm rounded-pill px-3" onclick="openAddMenuItemModal()">
+                            <i class="bi bi-plus-lg me-1"></i>Add New Item
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table align-middle table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Photo</th>
+                                    <th>Dish Name</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Type</th>
+                                    <th>Available</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="menuTableBody">
+                                <!-- Dynamic menu rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Restaurant Profile Settings Tab -->
+            <div class="tab-pane fade" id="profileTab">
+                <div class="bh-card p-4 col-lg-8">
+                    <h5 class="fw-bold mb-4">Edit Restaurant Profile</h5>
+                    <form id="restProfileForm" onsubmit="handleUpdateProfile(event)">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small">Restaurant Name</label>
+                                <input type="text" id="profName" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small">Cuisine Type</label>
+                                <input type="text" id="profCuisine" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small">Contact Phone</label>
+                                <input type="tel" id="profPhone" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small">Street Address</label>
+                                <input type="text" id="profAddress" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Description</label>
+                            <textarea id="profDesc" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small">Store Thumbnail Image</label>
+                                <div class="input-group mb-2">
+                                    <input type="url" id="profImage" class="form-control" placeholder="Image URL or upload file">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('restThumbFile').click()">
+                                        <i class="bi bi-upload me-1"></i>Upload
+                                    </button>
+                                </div>
+                                <input type="file" id="restThumbFile" accept="image/*" style="display:none;" onchange="uploadRestaurantImage(event, 'profImage', 'thumbPreview')">
+                                <div id="thumbPreviewWrap" class="mt-1" style="display:none;">
+                                    <img id="thumbPreview" src="" alt="Thumbnail" class="rounded border" style="height: 60px; width: 80px; object-fit: cover;">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small">Store Banner Image</label>
+                                <div class="input-group mb-2">
+                                    <input type="url" id="profBanner" class="form-control" placeholder="Banner URL or upload file">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('restBannerFile').click()">
+                                        <i class="bi bi-upload me-1"></i>Upload
+                                    </button>
+                                </div>
+                                <input type="file" id="restBannerFile" accept="image/*" style="display:none;" onchange="uploadRestaurantImage(event, 'profBanner', 'bannerPreview')">
+                                <div id="bannerPreviewWrap" class="mt-1" style="display:none;">
+                                    <img id="bannerPreview" src="" alt="Banner" class="rounded border" style="height: 60px; width: 100%; object-fit: cover;">
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-bh-primary px-4">Save Profile</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Assign Delivery Rider Modal -->
+    <div class="modal fade" id="assignRiderModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-bicycle text-primary me-2"></i>Assign Delivery Personnel</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="assignOrderId">
+                    <label class="form-label fw-semibold small">Select Available Delivery Rider:</label>
+                    <select id="riderSelect" class="form-select mb-3">
+                        <option value="">Select Rider...</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-bh-primary" onclick="confirmAssignRider()">Assign Rider</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Menu Item Modal -->
+    <div class="modal fade" id="menuItemModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="menuModalTitle">Add Menu Item</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="menuItemForm" onsubmit="handleSaveMenuItem(event)">
+                        <input type="hidden" id="menuItemId">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Food Name</label>
+                            <input type="text" id="mItemName" class="form-control" required placeholder="e.g. Double Cheeseburger">
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label fw-semibold small">Category</label>
+                                <input type="text" id="mItemCategory" class="form-control" required placeholder="Burgers, Pizzas, Drinks">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-semibold small">Price ($)</label>
+                                <input type="number" step="0.01" id="mItemPrice" class="form-control" required placeholder="9.99">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Description</label>
+                            <textarea id="mItemDesc" class="form-control" rows="2" placeholder="Ingredients and flavor profile..."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Photo Image</label>
+                            <div class="input-group mb-2">
+                                <input type="url" id="mItemImg" class="form-control" placeholder="Image URL or upload file">
+                                <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('menuItemFile').click()">
+                                    <i class="bi bi-upload me-1"></i>Upload
+                                </button>
+                            </div>
+                            <input type="file" id="menuItemFile" accept="image/*" style="display:none;" onchange="uploadRestaurantImage(event, 'mItemImg', 'menuItemPreview')">
+                            <div id="menuItemPreviewWrap" class="mt-1" style="display:none;">
+                                <img id="menuItemPreview" src="" alt="Item Preview" class="rounded border" style="height: 60px; width: 80px; object-fit: cover;">
+                            </div>
+                        </div>
+                        <div class="d-flex gap-3 mb-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="mItemVeg">
+                                <label class="form-check-label small" for="mItemVeg">Vegetarian</label>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="mItemAvail" checked>
+                                <label class="form-check-label small" for="mItemAvail">In Stock / Available</label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-bh-primary w-100">Save Item</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject / Cancel Reason Modal -->
+    <div class="modal fade" id="rejectOrderModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-danger">Reject Order</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="rejectOrderId">
+                    <label class="form-label fw-semibold small">Reason for Rejection</label>
+                    <select id="rejectReason" class="form-select">
+                        <option value="Restaurant too busy / Kitchen at capacity">Kitchen at capacity</option>
+                        <option value="Item ingredients out of stock">Item ingredients out of stock</option>
+                        <option value="Closing early today">Closing early today</option>
+                        <option value="Delivery address out of service range">Address out of range</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Back</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmRejectOrder()">Reject Order</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center small text-secondary">
+            &copy; 2026 BiteHub Food Delivery Management System. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- BiteHub Core API JS -->
+    <script src="/js/api.js"></script>
+    <script>
+        let myRestaurant = null;
+        let restaurantOrders = [];
+        let menuItems = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderNavbar('restaurant-dash');
+            if (!Auth.requireAuth(['ROLE_RESTAURANT', 'ROLE_ADMIN'])) return;
+
+            loadRestaurantInfo();
+            window.addEventListener('bitehub:order-updated', loadRestaurantOrders);
+        });
+
+        async function loadRestaurantInfo() {
+            try {
+                myRestaurant = await apiRequest('/restaurants/my-restaurant');
+                document.getElementById('restHeaderName').textContent = myRestaurant.name;
+                document.getElementById('restHeaderDetails').textContent = 
+                    `${Utils.escapeHTML(myRestaurant.cuisineType)} &bull; ${Utils.escapeHTML(myRestaurant.address)} &bull; Rating: Ã¢Â­Â ${myRestaurant.rating ? myRestaurant.rating.toFixed(1) : '4.5'}`;
+
+                updateStoreStatusButton(myRestaurant.open);
+
+                // Populate profile tab
+                document.getElementById('profName').value = myRestaurant.name;
+                document.getElementById('profCuisine').value = myRestaurant.cuisineType;
+                document.getElementById('profPhone').value = myRestaurant.phone;
+                document.getElementById('profAddress').value = myRestaurant.address;
+                document.getElementById('profDesc').value = myRestaurant.description || '';
+                document.getElementById('profImage').value = myRestaurant.imageUrl || '';
+                document.getElementById('profBanner').value = myRestaurant.bannerUrl || '';
+
+                if (myRestaurant.imageUrl) {
+                    const tPrev = document.getElementById('thumbPreview');
+                    if (tPrev) { tPrev.src = myRestaurant.imageUrl; tPrev.parentElement.style.display = 'block'; }
+                }
+                if (myRestaurant.bannerUrl) {
+                    const bPrev = document.getElementById('bannerPreview');
+                    if (bPrev) { bPrev.src = myRestaurant.bannerUrl; bPrev.parentElement.style.display = 'block'; }
+                }
+
+                loadRestaurantOrders();
+            } catch (e) {
+                alert('Could not load restaurant profile: ' + e.message);
+            }
+        }
+
+        async function uploadRestaurantImage(event, targetInputId, previewImgId) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                showToast('Uploading image...', 'info');
+                const token = Auth.getToken();
+                const res = await fetch('/api/upload/image', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Upload failed');
+
+                document.getElementById(targetInputId).value = data.url;
+                const preview = document.getElementById(previewImgId);
+                if (preview) {
+                    preview.src = data.url;
+                    preview.parentElement.style.display = 'block';
+                }
+                showToast('Image uploaded successfully!', 'success');
+            } catch (err) {
+                alert('Image upload failed: ' + err.message);
+            }
+        }
+
+        function updateStoreStatusButton(isOpen) {
+            const btn = document.getElementById('storeStatusBtn');
+            if (isOpen) {
+                btn.className = 'btn btn-success fw-bold px-3 rounded-pill';
+                btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Store Open';
+            } else {
+                btn.className = 'btn btn-outline-danger fw-bold px-3 rounded-pill';
+                btn.innerHTML = '<i class="bi bi-x-circle me-1"></i>Store Closed';
+            }
+        }
+
+        async function toggleStoreStatus() {
+            if (!myRestaurant) return;
+            try {
+                const updated = await apiRequest(`/restaurants/${myRestaurant.id}/toggle-status`, 'PATCH');
+                myRestaurant.open = updated.open;
+                updateStoreStatusButton(updated.open);
+                showToast(`Store is now ${updated.open ? 'OPEN' : 'CLOSED'}`, 'info');
+            } catch (e) {
+                alert('Error toggling store status: ' + e.message);
+            }
+        }
+
+        async function loadRestaurantOrders() {
+            if (!myRestaurant) return;
+            try {
+                restaurantOrders = await apiRequest(`/orders/restaurant/${myRestaurant.id}`);
+                updateKPIs();
+                renderFilteredOrders();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function updateKPIs() {
+            const pending = restaurantOrders.filter(o => o.orderStatus === 'PLACED').length;
+            const active = restaurantOrders.filter(o => ['CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP', 'OUT_FOR_DELIVERY'].includes(o.orderStatus)).length;
+            const completed = restaurantOrders.filter(o => o.orderStatus === 'DELIVERED').length;
+            const cancelled = restaurantOrders.filter(o => o.orderStatus === 'CANCELLED').length;
+            const revenue = restaurantOrders
+                .filter(o => o.orderStatus === 'DELIVERED')
+                .reduce((sum, o) => sum + o.subtotal, 0);
+
+            document.getElementById('statPending').textContent = pending;
+            document.getElementById('statActive').textContent = active;
+            document.getElementById('statCompleted').textContent = completed;
+            document.getElementById('statCancelled').textContent = cancelled;
+            document.getElementById('statRevenue').textContent = formatCurrency(revenue);
+        }
+
+        function renderFilteredOrders() {
+            const filter = document.getElementById('orderFilterStatus').value;
+            const tbody = document.getElementById('ordersTableBody');
+
+            let list = restaurantOrders;
+            if (filter !== 'ALL') {
+                list = restaurantOrders.filter(o => o.orderStatus === filter);
+            }
+
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">No orders found in this status.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = list.map(o => `
+                <tr>
+                    <td>
+                        <strong>#${o.orderNumber}</strong>
+                        <div class="text-secondary" style="font-size: 0.75rem;">${formatDate(o.placedAt)}</div>
+                    </td>
+                    <td>
+                        <div class="fw-bold small text-dark">${Utils.escapeHTML(o.customerName)}</div>
+                        <div class="text-muted small">${o.customerPhone || 'N/A'}</div>
+                        <div class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-geo-alt me-1"></i>${Utils.escapeHTML(o.deliveryAddressText)}</div>
+                    </td>
+                    <td>
+                        <div class="small">
+                            ${o.items.map(i => `<div>${i.quantity}x ${i.itemName}</div>`).join('')}
+                        </div>
+                        ${o.specialInstructions ? `<small class="text-primary d-block mt-1">Note: "${Utils.escapeHTML(o.specialInstructions)}"</small>` : ''}
+                    </td>
+                    <td>
+                        <div class="fw-bold text-primary">${formatCurrency(o.totalAmount)}</div>
+                        <small class="text-muted">${o.paymentMethod.replace(/_/g, ' ')}</small>
+                    </td>
+                    <td>${getStatusBadge(o.orderStatus)}</td>
+                    <td class="text-end">
+                        ${renderOrderActionButtons(o)}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderOrderActionButtons(o) {
+            switch (o.orderStatus) {
+                case 'PLACED':
+                    return `
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-success" onclick="updateStatus(${o.id}, 'CONFIRMED')"><i class="bi bi-check-lg me-1"></i>Accept</button>
+                            <button class="btn btn-outline-danger" onclick="openRejectModal(${o.id})"><i class="bi bi-x-lg"></i></button>
+                        </div>
+                    `;
+                case 'CONFIRMED':
+                    return `
+                        <button class="btn btn-sm btn-warning text-dark fw-semibold" onclick="updateStatus(${o.id}, 'PREPARING')">
+                            <i class="bi bi-fire me-1"></i>Start Cooking
+                        </button>
+                    `;
+                case 'PREPARING':
+                    return `
+                        <button class="btn btn-sm btn-info text-white fw-semibold" onclick="updateStatus(${o.id}, 'READY_FOR_PICKUP')">
+                            <i class="bi bi-box-seam me-1"></i>Mark Ready
+                        </button>
+                    `;
+                case 'READY_FOR_PICKUP':
+                    return `
+                        <button class="btn btn-sm btn-bh-primary" onclick="openAssignRiderModal(${o.id})">
+                            <i class="bi bi-bicycle me-1"></i>${o.deliveryPersonnelName ? 'Reassign Rider' : 'Assign Rider'}
+                        </button>
+                    `;
+                default:
+                    return `<span class="text-muted small">No action</span>`;
+            }
+        }
+
+        async function updateStatus(orderId, status) {
+            try {
+                await apiRequest(`/orders/${orderId}/status`, 'PUT', { status });
+                showToast(`Order status updated to ${status}`, 'success');
+                loadRestaurantOrders();
+            } catch (err) {
+                alert('Status update error: ' + err.message);
+            }
+        }
+
+        function openRejectModal(orderId) {
+            document.getElementById('rejectOrderId').value = orderId;
+            new bootstrap.Modal(document.getElementById('rejectOrderModal')).show();
+        }
+
+        async function confirmRejectOrder() {
+            const id = document.getElementById('rejectOrderId').value;
+            const reason = document.getElementById('rejectReason').value;
+            try {
+                await apiRequest(`/orders/${id}/status`, 'PUT', { status: 'CANCELLED', reason });
+                showToast('Order rejected.', 'warning');
+                bootstrap.Modal.getInstance(document.getElementById('rejectOrderModal')).hide();
+                loadRestaurantOrders();
+            } catch (e) {
+                alert(e.message);
+            }
+        }
+
+        async function openAssignRiderModal(orderId) {
+            document.getElementById('assignOrderId').value = orderId;
+            const select = document.getElementById('riderSelect');
+            select.innerHTML = '<option value="">Loading riders...</option>';
+            new bootstrap.Modal(document.getElementById('assignRiderModal')).show();
+
+            try {
+                const riders = await apiRequest('/deliveries/available-riders');
+                if (riders.length === 0) {
+                    select.innerHTML = '<option value="">No riders available</option>';
+                    return;
+                }
+                select.innerHTML = '<option value="">Choose Rider...</option>' + 
+                    riders.map(r => `<option value="${r.id}">${r.name} (${r.vehicleType}) - Active Orders: ${r.activeOrdersCount}</option>`).join('');
+            } catch (e) {
+                select.innerHTML = '<option value="">Failed to load riders</option>';
+            }
+        }
+
+        async function confirmAssignRider() {
+            const orderId = document.getElementById('assignOrderId').value;
+            const riderId = document.getElementById('riderSelect').value;
+            if (!riderId) {
+                alert('Please select a rider.');
+                return;
+            }
+
+            try {
+                await apiRequest(`/orders/${orderId}/assign-delivery`, 'POST', { deliveryPersonnelId: parseInt(riderId) });
+                showToast('Delivery rider assigned successfully!', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('assignRiderModal')).hide();
+                loadRestaurantOrders();
+            } catch (e) {
+                alert(e.message);
+            }
+        }
+
+        // --- Menu Management Methods ---
+        async function loadMenuItems() {
+            if (!myRestaurant) return;
+            const tbody = document.getElementById('menuTableBody');
+            try {
+                menuItems = await apiRequest(`/menu-items/restaurant/${myRestaurant.id}`);
+                if (menuItems.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">No items in your menu yet. Click "+ Add New Item".</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = menuItems.map(m => `
+                    <tr>
+                        <td>
+                            <img src="${m.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100'}" 
+                                 class="rounded-3" style="width: 45px; height: 45px; object-fit: cover;">
+                        </td>
+                        <td>
+                            <strong>${m.name}</strong>
+                            <div class="text-muted small text-truncate" style="max-width: 250px;">${m.description || ''}</div>
+                        </td>
+                        <td><span class="badge bg-light text-dark border">${m.category}</span></td>
+                        <td class="fw-bold">${formatCurrency(m.price)}</td>
+                        <td>${m.vegetarian ? '<span class="badge bg-success">Veg</span>' : '<span class="badge bg-danger">Non-Veg</span>'}</td>
+                        <td>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" ${m.available ? 'checked' : ''} onchange="toggleItemAvailability(${m.id})">
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-light border me-1" onclick='openEditMenuItemModal(${JSON.stringify(m)})'><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteMenuItem(${m.id})"><i class="bi bi-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-danger py-4 text-center">Failed to load menu: ${e.message}</td></tr>`;
+            }
+        }
+
+        function openAddMenuItemModal() {
+            document.getElementById('menuItemId').value = '';
+            document.getElementById('menuModalTitle').textContent = 'Add Menu Item';
+            document.getElementById('menuItemForm').reset();
+            document.getElementById('mItemAvail').checked = true;
+            const wrap = document.getElementById('menuItemPreviewWrap');
+            if (wrap) wrap.style.display = 'none';
+            new bootstrap.Modal(document.getElementById('menuItemModal')).show();
+        }
+
+        function openEditMenuItemModal(m) {
+            document.getElementById('menuItemId').value = m.id;
+            document.getElementById('menuModalTitle').textContent = 'Edit Menu Item';
+            document.getElementById('mItemName').value = m.name;
+            document.getElementById('mItemCategory').value = m.category;
+            document.getElementById('mItemPrice').value = m.price;
+            document.getElementById('mItemDesc').value = m.description || '';
+            document.getElementById('mItemImg').value = m.imageUrl || '';
+            document.getElementById('mItemVeg').checked = m.vegetarian;
+            document.getElementById('mItemAvail').checked = m.available;
+            const wrap = document.getElementById('menuItemPreviewWrap');
+            const prev = document.getElementById('menuItemPreview');
+            if (m.imageUrl) {
+                if (prev) prev.src = m.imageUrl;
+                if (wrap) wrap.style.display = 'block';
+            } else {
+                if (wrap) wrap.style.display = 'none';
+            }
+            new bootstrap.Modal(document.getElementById('menuItemModal')).show();
+        }
+
+        async function handleSaveMenuItem(e) {
+            e.preventDefault();
+            const id = document.getElementById('menuItemId').value;
+            const payload = {
+                name: document.getElementById('mItemName').value.trim(),
+                category: document.getElementById('mItemCategory').value.trim(),
+                price: parseFloat(document.getElementById('mItemPrice').value),
+                description: document.getElementById('mItemDesc').value.trim(),
+                imageUrl: document.getElementById('mItemImg').value.trim(),
+                isVegetarian: document.getElementById('mItemVeg').checked,
+                isAvailable: document.getElementById('mItemAvail').checked
+            };
+
+            try {
+                if (id) {
+                    await apiRequest(`/menu-items/${id}`, 'PUT', payload);
+                    showToast('Item updated successfully!', 'success');
+                } else {
+                    await apiRequest(`/menu-items/restaurant/${myRestaurant.id}`, 'POST', payload);
+                    showToast('New item added to menu!', 'success');
+                }
+                bootstrap.Modal.getInstance(document.getElementById('menuItemModal')).hide();
+                loadMenuItems();
+            } catch (err) {
+                alert('Save error: ' + err.message);
+            }
+        }
+
+        async function toggleItemAvailability(id) {
+            try {
+                await apiRequest(`/menu-items/${id}/toggle-availability`, 'PATCH');
+                showToast('Availability updated', 'info');
+            } catch (err) {
+                alert(err.message);
+                loadMenuItems();
+            }
+        }
+
+        async function deleteMenuItem(id) {
+            if (confirm('Are you sure you want to remove this dish from your menu?')) {
+                try {
+                    await apiRequest(`/menu-items/${id}`, 'DELETE');
+                    showToast('Item removed', 'info');
+                    loadMenuItems();
+                } catch (err) {
+                    alert('Delete failed: ' + err.message);
+                }
+            }
+        }
+
+        async function handleUpdateProfile(e) {
+            e.preventDefault();
+            const payload = {
+                name: document.getElementById('profName').value.trim(),
+                cuisineType: document.getElementById('profCuisine').value.trim(),
+                phone: document.getElementById('profPhone').value.trim(),
+                address: document.getElementById('profAddress').value.trim(),
+                description: document.getElementById('profDesc').value.trim(),
+                imageUrl: document.getElementById('profImage').value.trim(),
+                bannerUrl: document.getElementById('profBanner').value.trim()
+            };
+
+            try {
+                await apiRequest('/restaurants/my-restaurant', 'PUT', payload);
+                showToast('Restaurant profile updated!', 'success');
+                loadRestaurantInfo();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+    </script>
+</body>
+</html>

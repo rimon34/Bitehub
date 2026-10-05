@@ -1,0 +1,307 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BiteHub - Restaurant Menu</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Header Navigation Container -->
+    <div id="navbar-container"></div>
+
+    <main class="container my-4">
+        <!-- Restaurant Header Banner -->
+        <div id="restaurantHeader">
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="text-muted mt-2">Loading menu...</p>
+            </div>
+        </div>
+
+        <div class="row g-4 mt-2">
+            <!-- Menu Column -->
+            <div class="col-lg-8">
+                <!-- Category Tabs -->
+                <div class="d-flex gap-2 overflow-auto pb-2 mb-4" id="categoryNav">
+                    <!-- Dynamic categories -->
+                </div>
+
+                <!-- Food Items List -->
+                <div id="menuItemsContainer" class="d-flex flex-column gap-3">
+                    <!-- Dynamic menu items -->
+                </div>
+
+                <!-- Restaurant Reviews Section -->
+                <div class="bh-card p-4 mt-5" id="reviewsSection">
+                    <h4 class="fw-bold mb-3"><i class="bi bi-chat-heart text-danger me-2"></i>Customer Reviews</h4>
+                    <div id="reviewsContainer">
+                        <p class="text-muted small">Loading reviews...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sticky Cart Sidebar -->
+            <div class="col-lg-4">
+                <div class="bh-card p-4 sticky-top" style="top: 90px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold m-0"><i class="bi bi-bag-check me-2 text-primary"></i>Your Order</h5>
+                        <button class="btn btn-sm text-danger p-0" onclick="clearCurrentCart()"><small>Clear</small></button>
+                    </div>
+
+                    <div id="cartItemsList" class="d-flex flex-column gap-2 mb-3" style="max-height: 320px; overflow-y: auto;">
+                        <p class="text-muted small text-center py-4">Your cart is empty.<br>Add delicious items from the menu!</p>
+                    </div>
+
+                    <div class="border-top pt-3" id="cartSummaryBlock" style="display: none;">
+                        <div class="d-flex justify-content-between text-muted small mb-1">
+                            <span>Subtotal</span>
+                            <span id="sidebarSubtotal">$0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between text-muted small mb-2">
+                            <span>Delivery Fee</span>
+                            <span>$40.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between fw-bold text-dark fs-5 mb-3">
+                            <span>Total</span>
+                            <span id="sidebarTotal" class="text-primary">$0.00</span>
+                        </div>
+                        <a href="/checkout.html" class="btn btn-bh-primary w-100 py-2 fw-bold rounded-3">
+                            Proceed to Checkout <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center small text-secondary">
+            &copy; 2026 BiteHub Food Delivery Management System. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- BiteHub Core API JS -->
+    <script src="/js/api.js"></script>
+    <script>
+        let currentRestaurant = null;
+        let allMenuItems = [];
+        let activeCategory = 'all';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderNavbar('restaurants');
+            const params = new URLSearchParams(window.location.search);
+            const restaurantId = params.get('id');
+
+            if (!restaurantId) {
+                window.location.href = '/restaurants.html';
+                return;
+            }
+
+            loadRestaurant(restaurantId);
+            renderSidebarCart();
+        });
+
+        async function loadRestaurant(id) {
+            try {
+                currentRestaurant = await apiRequest(`/restaurants/${id}`);
+                renderRestaurantHeader(currentRestaurant);
+
+                allMenuItems = await apiRequest(`/menu-items/restaurant/${id}`);
+                const categories = await apiRequest(`/menu-items/restaurant/${id}/categories`);
+
+                renderCategories(categories);
+                renderMenuItems(allMenuItems);
+                loadReviews(id);
+            } catch (error) {
+                document.getElementById('restaurantHeader').innerHTML = `
+                    <div class="alert alert-danger">Error loading restaurant: ${error.message}</div>
+                `;
+            }
+        }
+
+        function renderRestaurantHeader(r) {
+            document.getElementById('restaurantHeader').innerHTML = `
+                <div class="bh-card p-4 shadow-sm position-relative overflow-hidden">
+                    <div class="row align-items-center g-3">
+                        <div class="col-md-3 text-center">
+                            <img src="${r.imageUrl || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600'}" 
+                                 class="img-fluid rounded-4 shadow-sm" style="max-height: 160px; width: 100%; object-fit: cover;" alt="${Utils.escapeHTML(r.name)}">
+                        </div>
+                        <div class="col-md-9">
+                            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                                <h2 class="fw-extrabold text-dark m-0">${Utils.escapeHTML(r.name)}</h2>
+                                <span class="badge ${r.open ? 'bg-success' : 'bg-secondary'} px-2 py-1">${r.open ? 'Open Now' : 'Closed'}</span>
+                                <span class="badge bg-light text-dark border px-2 py-1">${Utils.escapeHTML(r.cuisineType || 'Cuisine')}</span>
+                            </div>
+                            <p class="text-muted mb-2">${Utils.escapeHTML(r.description || 'Quality food freshly prepared upon order.')}</p>
+                            <div class="d-flex flex-wrap gap-3 small text-secondary">
+                                <span><i class="bi bi-geo-alt text-danger me-1"></i>${Utils.escapeHTML(r.address || 'Campus Central')}</span>
+                                <span><i class="bi bi-telephone text-primary me-1"></i>${Utils.escapeHTML(r.phone || 'N/A')}</span>
+                                <span class="fw-bold text-dark"><i class="bi bi-star-fill text-warning me-1"></i>${r.rating ? r.rating.toFixed(1) : '4.5'} (${r.totalReviews || 0} reviews)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderCategories(categories) {
+            const nav = document.getElementById('categoryNav');
+            let html = `
+                <button class="btn btn-sm rounded-pill px-3 fw-semibold ${activeCategory === 'all' ? 'btn-bh-primary' : 'btn-outline-secondary'}" 
+                        onclick="filterCategory('all')">All Items</button>
+            `;
+            categories.forEach(cat => {
+                html += `
+                    <button class="btn btn-sm rounded-pill px-3 fw-semibold text-nowrap ${activeCategory === cat ? 'btn-bh-primary' : 'btn-outline-secondary'}" 
+                            data-category="${encodeURIComponent(cat)}" onclick="filterCategory(decodeURIComponent(this.dataset.category))">${Utils.escapeHTML(cat)}</button>
+                `;
+            });
+            nav.innerHTML = html;
+        }
+
+        function filterCategory(cat) {
+            activeCategory = cat;
+            document.querySelectorAll('#categoryNav button').forEach(btn => {
+                if (btn.textContent.trim() === cat || (cat === 'all' && btn.textContent.trim() === 'All Items')) {
+                    btn.className = 'btn btn-sm rounded-pill px-3 fw-semibold btn-bh-primary';
+                } else {
+                    btn.className = 'btn btn-sm rounded-pill px-3 fw-semibold btn-outline-secondary text-nowrap';
+                }
+            });
+
+            if (cat === 'all') {
+                renderMenuItems(allMenuItems);
+            } else {
+                const filtered = allMenuItems.filter(i => i.category && i.category.toLowerCase() === cat.toLowerCase());
+                renderMenuItems(filtered);
+            }
+        }
+
+        function renderMenuItems(items) {
+            const container = document.getElementById('menuItemsContainer');
+            if (!items || items.length === 0) {
+                container.innerHTML = `<div class="p-4 text-center text-muted bg-white rounded-3 border">No dishes available in this category.</div>`;
+                return;
+            }
+
+            container.innerHTML = items.map(item => `
+                <div class="menu-item-card">
+                    <img src="${item.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500'}" alt="${Utils.escapeHTML(item.name)}" class="menu-item-img">
+                    <div class="d-flex flex-column flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <h6 class="fw-bold text-dark m-0 d-flex align-items-center gap-2">
+                                ${item.vegetarian ? '<span title="Vegetarian" class="badge bg-success-subtle text-success border border-success p-1 rounded-circle"><i class="bi bi-circle-fill" style="font-size: 6px;"></i></span>' : '<span title="Non-Vegetarian" class="badge bg-danger-subtle text-danger border border-danger p-1 rounded-circle"><i class="bi bi-circle-fill" style="font-size: 6px;"></i></span>'}
+                                ${Utils.escapeHTML(item.name)}
+                            </h6>
+                            <span class="fw-bold fs-6 text-primary">${formatCurrency(item.price)}</span>
+                        </div>
+                        <p class="text-muted small mt-1 mb-2 flex-grow-1">${Utils.escapeHTML(item.description || '')}</p>
+                        <div class="d-flex justify-content-between align-items-center mt-auto">
+                            <small class="text-secondary"><i class="bi bi-clock me-1"></i>${item.preparationTimeMinutes || 20} mins</small>
+                            ${item.available && currentRestaurant.open ? `
+                                <button class="btn btn-sm btn-bh-primary rounded-pill px-3" data-item-id="${Number(item.id)}" onclick="handleAddToCart(allMenuItems.find(i => i.id === Number(this.dataset.itemId)))">
+                                    <i class="bi bi-plus me-1"></i>Add
+                                </button>
+                            ` : `
+                                <button class="btn btn-sm btn-secondary rounded-pill px-3" disabled>
+                                    ${!currentRestaurant.open ? 'Store Closed' : 'Sold Out'}
+                                </button>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function handleAddToCart(item) {
+            Cart.addItem(currentRestaurant.id, currentRestaurant.name, item);
+            renderSidebarCart();
+        }
+
+        function renderSidebarCart() {
+            const cart = Cart.get();
+            const list = document.getElementById('cartItemsList');
+            const summary = document.getElementById('cartSummaryBlock');
+
+            if (!cart || cart.items.length === 0) {
+                list.innerHTML = `<p class="text-muted small text-center py-4">Your cart is empty.<br>Add delicious items from the menu!</p>`;
+                summary.style.display = 'none';
+                return;
+            }
+
+            summary.style.display = 'block';
+            list.innerHTML = cart.items.map(item => `
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                    <div style="max-width: 140px;">
+                        <div class="fw-semibold text-dark small text-truncate">${Utils.escapeHTML(item.name)}</div>
+                        <small class="text-muted">${formatCurrency(item.price)}</small>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-light border py-0 px-2" onclick="modifyQty(${item.menuItemId}, -1)">-</button>
+                        <span class="fw-bold small">${item.quantity}</span>
+                        <button class="btn btn-sm btn-light border py-0 px-2" onclick="modifyQty(${item.menuItemId}, 1)">+</button>
+                    </div>
+                    <div class="fw-bold small text-end" style="min-width: 60px;">
+                        ${formatCurrency(item.price * item.quantity)}
+                    </div>
+                </div>
+            `).join('');
+
+            const subtotal = Cart.getSubtotal();
+            document.getElementById('sidebarSubtotal').textContent = formatCurrency(subtotal);
+            document.getElementById('sidebarTotal').textContent = formatCurrency(subtotal + 40.0);
+        }
+
+        function modifyQty(itemId, delta) {
+            Cart.updateQuantity(itemId, delta);
+            renderSidebarCart();
+        }
+
+        function clearCurrentCart() {
+            if (confirm('Are you sure you want to clear your cart?')) {
+                Cart.clear();
+                renderSidebarCart();
+            }
+        }
+
+        async function loadReviews(restaurantId) {
+            const container = document.getElementById('reviewsContainer');
+            try {
+                const reviews = await apiRequest(`/reviews/restaurant/${restaurantId}`);
+                if (!reviews || reviews.length === 0) {
+                    container.innerHTML = `<p class="text-muted small">No reviews yet for this restaurant. Be the first to order and review!</p>`;
+                    return;
+                }
+
+                container.innerHTML = reviews.map(r => `
+                    <div class="border-bottom pb-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold text-dark">${Utils.escapeHTML(r.customerName || 'Verified Diner')}</span>
+                            <div class="text-warning small">
+                                ${'<i class="bi bi-star-fill"></i>'.repeat(r.rating || 5)}
+                            </div>
+                        </div>
+                        <p class="text-muted small mb-1">${Utils.escapeHTML(r.comment || 'Great food and timely delivery!')}</p>
+                        <small class="text-secondary" style="font-size: 0.75rem;">${formatDate(r.createdAt)}</small>
+                    </div>
+                `).join('');
+            } catch (err) {
+                container.innerHTML = `<p class="text-danger small">Failed to load reviews.</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

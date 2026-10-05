@@ -1,0 +1,182 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BiteHub - Shopping Cart</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Header Navigation Container -->
+    <div id="navbar-container"></div>
+
+    <main class="container my-5">
+        <h2 class="fw-bold mb-4"><i class="bi bi-cart3 text-primary me-2"></i>Your Food Basket</h2>
+
+        <div class="row g-4">
+            <!-- Items Table -->
+            <div class="col-lg-8">
+                <div class="bh-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold m-0" id="cartRestaurantName">Items from Restaurant</h5>
+                        <button class="btn btn-sm btn-outline-danger" onclick="clearCart()"><i class="bi bi-trash3 me-1"></i>Empty Cart</button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Dish</th>
+                                    <th>Price</th>
+                                    <th class="text-center">Quantity</th>
+                                    <th class="text-end">Subtotal</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="cartTableBody">
+                                <!-- Dynamic cart rows -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="emptyCartView" class="text-center py-5" style="display: none;">
+                        <i class="bi bi-basket3 text-muted display-4 d-block mb-3"></i>
+                        <h5 class="fw-bold text-secondary">Your Cart is Currently Empty</h5>
+                        <p class="text-muted small">Looks like you haven't added anything to your cart yet.</p>
+                        <a href="/restaurants.html" class="btn btn-bh-primary rounded-pill px-4 mt-2">Explore Restaurants</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Summary Card -->
+            <div class="col-lg-4">
+                <div class="bh-card p-4">
+                    <h5 class="fw-bold mb-3">Order Summary</h5>
+                    <div class="d-flex justify-content-between text-muted mb-2">
+                        <span>Items Subtotal</span>
+                        <span id="summarySubtotal">$0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between text-muted mb-2">
+                        <span>Estimated Delivery Fee</span>
+                        <span>Tk 40.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between text-muted mb-3">
+                        <span>Estimated Tax (5%)</span>
+                        <span id="summaryTax">$0.00</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between fw-bold text-dark fs-5 mb-4">
+                        <span>Estimated Total</span>
+                        <span id="summaryTotal" class="text-primary">$0.00</span>
+                    </div>
+
+                    <a href="/checkout.html" id="checkoutBtn" class="btn btn-bh-primary w-100 py-3 fw-bold rounded-3">
+                        Proceed to Checkout <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center small text-secondary">
+            &copy; 2026 BiteHub Food Delivery Management System. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- BiteHub Core API JS -->
+    <script src="/js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            renderNavbar('cart');
+            renderCartPage();
+        });
+
+        function renderCartPage() {
+            const cart = Cart.get();
+            const tbody = document.getElementById('cartTableBody');
+            const emptyView = document.getElementById('emptyCartView');
+            const restNameEl = document.getElementById('cartRestaurantName');
+            const checkoutBtn = document.getElementById('checkoutBtn');
+
+            if (!cart || cart.items.length === 0) {
+                tbody.innerHTML = '';
+                emptyView.style.display = 'block';
+                restNameEl.textContent = 'Cart is empty';
+                checkoutBtn.classList.add('disabled');
+                document.getElementById('summarySubtotal').textContent = '$0.00';
+                document.getElementById('summaryTax').textContent = '$0.00';
+                document.getElementById('summaryTotal').textContent = '$0.00';
+                return;
+            }
+
+            emptyView.style.display = 'none';
+            checkoutBtn.classList.remove('disabled');
+            restNameEl.innerHTML = `<span class="text-muted fw-normal">Ordering from:</span> <span class="text-primary">${cart.restaurantName}</span>`;
+
+            tbody.innerHTML = cart.items.map(item => `
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            <img src="${item.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100'}" 
+                                 class="rounded-3" style="width: 50px; height: 50px; object-fit: cover;">
+                            <div class="fw-semibold text-dark">${item.name}</div>
+                        </div>
+                    </td>
+                    <td>${formatCurrency(item.price)}</td>
+                    <td class="text-center">
+                        <div class="d-inline-flex align-items-center gap-2 border rounded-pill px-2 py-1 bg-light">
+                            <button class="btn btn-sm btn-link text-dark p-0" onclick="updateQty(${item.menuItemId}, -1)"><i class="bi bi-dash"></i></button>
+                            <span class="fw-bold px-2">${item.quantity}</span>
+                            <button class="btn btn-sm btn-link text-dark p-0" onclick="updateQty(${item.menuItemId}, 1)"><i class="bi bi-plus"></i></button>
+                        </div>
+                    </td>
+                    <td class="text-end fw-bold">${formatCurrency(item.price * item.quantity)}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-danger border-0" onclick="removeItem(${item.menuItemId})">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            const subtotal = Cart.getSubtotal();
+            const tax = Math.round(subtotal * 0.05 * 100.0) / 100.0;
+            const deliveryFee = 40.0;
+            const total = subtotal + tax + deliveryFee;
+
+            document.getElementById('summarySubtotal').textContent = formatCurrency(subtotal);
+            document.getElementById('summaryTax').textContent = formatCurrency(tax);
+            document.getElementById('summaryTotal').textContent = formatCurrency(total);
+        }
+
+        function updateQty(id, delta) {
+            Cart.updateQuantity(id, delta);
+            renderCartPage();
+        }
+
+        function removeItem(id) {
+            Cart.removeItem(id);
+            renderCartPage();
+        }
+
+        function clearCart() {
+            if (confirm('Are you sure you want to clear your entire cart?')) {
+                Cart.clear();
+                renderCartPage();
+            }
+        }
+    </script>
+</body>
+</html>
