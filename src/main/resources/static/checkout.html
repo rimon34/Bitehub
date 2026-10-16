@@ -1,0 +1,340 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BiteHub - Checkout</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+    <!-- Header Navigation Container -->
+    <div id="navbar-container"></div>
+
+    <main class="container my-5">
+        <h2 class="fw-bold mb-4"><i class="bi bi-shield-check text-primary me-2"></i>Checkout & Delivery Details</h2>
+
+        <div class="row g-4">
+            <!-- Delivery & Payment Form Column -->
+            <div class="col-lg-7">
+                <form id="checkoutForm" onsubmit="handlePlaceOrder(event)">
+                    <!-- Step 1: Delivery Address -->
+                    <div class="bh-card p-4 mb-4">
+                        <h5 class="fw-bold text-dark mb-3"><i class="bi bi-geo-alt-fill text-danger me-2"></i>1. Delivery Address</h5>
+                        
+                        <div id="savedAddressesSection" class="mb-3" style="display: none;">
+                            <label class="form-label fw-semibold small text-muted">Select Saved Address:</label>
+                            <div id="savedAddressesList" class="d-flex flex-column gap-2 mb-3"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Delivery Address / Room / Department</label>
+                            <textarea id="deliveryAddress" class="form-control" rows="2" placeholder="e.g. 742 Evergreen Terrace, Apt 4B or Campus Hall 3, Room 204" required></textarea>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small">Contact Phone</label>
+                                <input type="tel" id="contactPhone" class="form-control" placeholder="+1 555-0199" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small">Cooking / Delivery Instructions (Optional)</label>
+                                <input type="text" id="specialInstructions" class="form-control" placeholder="e.g. Extra spicy, call upon arrival">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Payment Method -->
+                    <div class="bh-card p-4 mb-4">
+                        <h5 class="fw-bold text-dark mb-3"><i class="bi bi-credit-card-2-front-fill text-primary me-2"></i>2. Payment Method</h5>
+                        
+                        <div class="d-flex flex-column gap-2 mb-3">
+                            <label class="p-3 border rounded-3 d-flex align-items-center gap-3 cursor-pointer bg-white">
+                                <input type="radio" name="paymentMethod" value="CASH_ON_DELIVERY" class="form-check-input mt-0" checked onchange="handlePaymentMethodChange()">
+                                <div>
+                                    <div class="fw-bold text-dark"><i class="bi bi-cash-stack text-success me-1"></i> Cash on Delivery</div>
+                                    <small class="text-muted">Pay in cash or upon receiving your meal.</small>
+                                </div>
+                            </label>
+
+                            <label class="p-3 border rounded-3 d-flex align-items-center gap-3 cursor-pointer bg-white">
+                                <input type="radio" name="paymentMethod" value="CREDIT_CARD" class="form-check-input mt-0" onchange="handlePaymentMethodChange()">
+                                <div>
+                                    <div class="fw-bold text-dark"><i class="bi bi-credit-card text-primary me-1"></i> Credit / Debit Card (Simulation)</div>
+                                    <small class="text-muted">Instant payment approval for university demo.</small>
+                                </div>
+                            </label>
+
+                            <label class="p-3 border rounded-3 d-flex align-items-center gap-3 cursor-pointer bg-white">
+                                <input type="radio" name="paymentMethod" value="MOBILE_BANKING" class="form-check-input mt-0" onchange="handlePaymentMethodChange()">
+                                <div>
+                                    <div class="fw-bold text-dark"><i class="bi bi-phone text-warning me-1"></i> Mobile Banking (bKash / Nagad Simulation)</div>
+                                    <small class="text-muted">Simulated instant wallet transaction.</small>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Card Simulation Inputs -->
+                        <div id="cardDetailsBlock" class="p-3 bg-light rounded-3 border mb-3" style="display: none;">
+                            <h6 class="fw-bold small mb-2"><i class="bi bi-shield-lock me-1"></i>Simulated Card Information</h6>
+                            <div class="row g-2">
+                                <div class="col-12">
+                                    <input type="text" class="form-control form-control-sm" placeholder="Card Number (e.g. 4242 &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; 4242)" value="4242 4242 4242 4242">
+                                </div>
+                                <div class="col-6">
+                                    <input type="text" class="form-control form-control-sm" placeholder="MM/YY" value="12/28">
+                                </div>
+                                <div class="col-6">
+                                    <input type="password" class="form-control form-control-sm" placeholder="CVV" value="123">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mobile Banking Simulation Inputs -->
+                        <div id="mobileBankingBlock" class="p-3 bg-light rounded-3 border mb-3" style="display: none;">
+                            <h6 class="fw-bold small mb-2"><i class="bi bi-phone me-1"></i>Simulated Mobile Wallet</h6>
+                            <input type="tel" class="form-control form-control-sm" placeholder="Wallet Account Number (e.g. 01700000000)" value="01712345678">
+                        </div>
+                    </div>
+
+                    <div id="orderErrorAlert" class="alert alert-danger py-2 small" style="display: none;"></div>
+
+                    <button type="submit" id="placeOrderBtn" class="btn btn-bh-primary w-100 py-3 fw-bold rounded-3 fs-5 shadow">
+                        Place Order Now <i class="bi bi-arrow-right-circle ms-2"></i>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Order Breakdown & Coupon Column -->
+            <div class="col-lg-5">
+                <div class="bh-card p-4">
+                    <h5 class="fw-bold mb-3">Order Details</h5>
+                    <div id="checkoutItemsList" class="d-flex flex-column gap-2 mb-3 pb-3 border-bottom" style="max-height: 250px; overflow-y: auto;"></div>
+
+                    <!-- Coupon Code Field -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Have a Promo Coupon?</label>
+                        <div class="input-group">
+                            <input type="text" id="couponInput" class="form-control text-uppercase" placeholder="Try BITE20 or CAMPUS5">
+                            <button class="btn btn-outline-primary fw-semibold" type="button" onclick="applyCoupon()">Apply</button>
+                        </div>
+                        <div id="couponStatusMessage" class="small mt-1" style="display: none;"></div>
+                    </div>
+
+                    <!-- Cost Breakdown -->
+                    <div class="d-flex justify-content-between text-muted small mb-2">
+                        <span>Subtotal</span>
+                        <span id="checkoutSubtotal">$0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between text-muted small mb-2">
+                        <span>Delivery Fee</span>
+                        <span>Tk 40.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between text-muted small mb-2">
+                        <span>Tax (5%)</span>
+                        <span id="checkoutTax">$0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between text-success small mb-3" id="discountRow" style="display: none !important;">
+                        <span>Coupon Discount (<span id="appliedCodeText"></span>)</span>
+                        <span id="checkoutDiscount">-$0.00</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between fw-bold text-dark fs-4">
+                        <span>Total to Pay</span>
+                        <span id="checkoutTotal" class="text-primary">$0.00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center small text-secondary">
+            &copy; 2026 BiteHub Food Delivery Management System. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- BiteHub Core API JS -->
+    <script src="/js/api.js"></script>
+    <script>
+        let appliedCouponCode = '';
+        let discountAmount = 0.0;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderNavbar('cart');
+            if (!Auth.requireAuth()) return;
+
+            const cart = Cart.get();
+            if (!cart || cart.items.length === 0) {
+                alert('Your cart is empty! Please add items before checking out.');
+                window.location.href = '/restaurants.html';
+                return;
+            }
+
+            const user = Auth.getUser();
+            if (user && user.phone) {
+                document.getElementById('contactPhone').value = user.phone;
+            }
+
+            renderOrderSummary();
+            loadSavedAddresses();
+        });
+
+        async function loadSavedAddresses() {
+            try {
+                const addresses = await apiRequest('/users/addresses');
+                if (addresses && addresses.length > 0) {
+                    const sec = document.getElementById('savedAddressesSection');
+                    const list = document.getElementById('savedAddressesList');
+                    sec.style.display = 'block';
+
+                    list.innerHTML = addresses.map((addr, idx) => `
+                        <label class="p-2 border rounded-3 d-flex align-items-center gap-2 cursor-pointer bg-white small">
+                            <input type="radio" name="savedAddrRadio" value="${addr.id}" ${idx === 0 ? 'checked' : ''} 
+                                   onchange="selectSavedAddress(${Utils.escapeHTML(JSON.stringify(addr))})">
+                            <div>
+                                <span class="badge bg-secondary me-1">${Utils.escapeHTML(addr.label) || 'Home'}</span>
+                                <span class="text-dark">${Utils.escapeHTML(addr.streetAddress)}, ${Utils.escapeHTML(addr.city)}</span>
+                            </div>
+                        </label>
+                    `).join('');
+
+                    selectSavedAddress(addresses[0]);
+                }
+            } catch (e) {
+                console.log('No saved addresses or error loading addresses');
+            }
+        }
+
+        function selectSavedAddress(addr) {
+            document.getElementById('deliveryAddress').value = `${addr.streetAddress}, ${addr.city} ${addr.postalCode ? '(' + addr.postalCode + ')' : ''}`;
+            if (addr.contactPhone) {
+                document.getElementById('contactPhone').value = addr.contactPhone;
+            }
+        }
+
+        function renderOrderSummary() {
+            const cart = Cart.get();
+            const list = document.getElementById('checkoutItemsList');
+
+            list.innerHTML = cart.items.map(item => `
+                <div class="d-flex justify-content-between align-items-center small">
+                    <div class="text-truncate" style="max-width: 220px;">
+                        <span class="fw-bold">${item.quantity}x</span> ${Utils.escapeHTML(item.name)}
+                    </div>
+                    <span class="fw-semibold">${formatCurrency(item.price * item.quantity)}</span>
+                </div>
+            `).join('');
+
+            updateCalculations();
+        }
+
+        function updateCalculations() {
+            const subtotal = Cart.getSubtotal();
+            const tax = Math.round(subtotal * 0.05 * 100.0) / 100.0;
+            const deliveryFee = 40.0;
+            const total = Math.max(0.0, subtotal + tax + deliveryFee - discountAmount);
+
+            document.getElementById('checkoutSubtotal').textContent = formatCurrency(subtotal);
+            document.getElementById('checkoutTax').textContent = formatCurrency(tax);
+            document.getElementById('checkoutTotal').textContent = formatCurrency(total);
+
+            const discountRow = document.getElementById('discountRow');
+            if (discountAmount > 0) {
+                discountRow.style.setProperty('display', 'flex', 'important');
+                document.getElementById('appliedCodeText').textContent = appliedCouponCode;
+                document.getElementById('checkoutDiscount').textContent = `-${formatCurrency(discountAmount)}`;
+            } else {
+                discountRow.style.setProperty('display', 'none', 'important');
+            }
+        }
+
+        async function applyCoupon() {
+            const code = document.getElementById('couponInput').value.trim();
+            const statusEl = document.getElementById('couponStatusMessage');
+            if (!code) {
+                statusEl.textContent = 'Please enter a coupon code';
+                statusEl.className = 'small text-danger mt-1';
+                statusEl.style.display = 'block';
+                return;
+            }
+
+            try {
+                const subtotal = Cart.getSubtotal();
+                const res = await apiRequest('/coupons/validate', 'POST', { code, subtotal });
+
+                if (res.valid) {
+                    appliedCouponCode = res.code;
+                    discountAmount = res.discountAmount;
+                    statusEl.textContent = `Coupon "${res.code}" applied! You saved ${formatCurrency(res.discountAmount)}.`;
+                    statusEl.className = 'small text-success fw-bold mt-1';
+                    statusEl.style.display = 'block';
+                    updateCalculations();
+                } else {
+                    appliedCouponCode = '';
+                    discountAmount = 0.0;
+                    statusEl.textContent = res.message || 'Invalid coupon code';
+                    statusEl.className = 'small text-danger mt-1';
+                    statusEl.style.display = 'block';
+                    updateCalculations();
+                }
+            } catch (err) {
+                statusEl.textContent = err.message;
+                statusEl.className = 'small text-danger mt-1';
+                statusEl.style.display = 'block';
+            }
+        }
+
+        function handlePaymentMethodChange() {
+            const method = document.querySelector('input[name="paymentMethod"]:checked').value;
+            document.getElementById('cardDetailsBlock').style.display = method === 'CREDIT_CARD' ? 'block' : 'none';
+            document.getElementById('mobileBankingBlock').style.display = method === 'MOBILE_BANKING' ? 'block' : 'none';
+        }
+
+        async function handlePlaceOrder(e) {
+            e.preventDefault();
+            const cart = Cart.get();
+            const alertBox = document.getElementById('orderErrorAlert');
+            const submitBtn = document.getElementById('placeOrderBtn');
+
+            alertBox.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Placing Order...';
+
+            const payload = {
+                restaurantId: cart.restaurantId,
+                items: cart.items.map(i => ({ menuItemId: i.menuItemId, quantity: i.quantity })),
+                deliveryAddress: document.getElementById('deliveryAddress').value.trim(),
+                customerPhone: document.getElementById('contactPhone').value.trim(),
+                specialInstructions: document.getElementById('specialInstructions').value.trim(),
+                paymentMethod: document.querySelector('input[name="paymentMethod"]:checked').value,
+                couponCode: appliedCouponCode || null
+            };
+
+            try {
+                const order = await apiRequest('/orders', 'POST', payload);
+                Cart.clear();
+                showToast('Order placed successfully!', 'success');
+                setTimeout(() => {
+                    window.location.href = `/order-tracking.html?orderNumber=${order.orderNumber}`;
+                }, 600);
+            } catch (err) {
+                alertBox.textContent = err.message;
+                alertBox.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Place Order Now <i class="bi bi-arrow-right-circle ms-2"></i>';
+            }
+        }
+    </script>
+</body>
+</html>

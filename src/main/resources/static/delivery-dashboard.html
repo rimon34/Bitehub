@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BiteHub - Delivery Rider Portal</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS for Live Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Custom CSS -->
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+    <!-- Header Navigation Container -->
+    <div id="navbar-container"></div>
+
+    <main class="container my-5">
+        <!-- Rider Header -->
+        <div class="bh-card p-4 mb-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; font-size: 1.8rem;">
+                        <i class="bi bi-bicycle"></i>
+                    </div>
+                    <div>
+                        <span class="badge bg-warning text-dark px-2 py-1 mb-1">Active Courier</span>
+                        <h3 class="fw-bold text-dark m-0" id="riderName">Alex Carter</h3>
+                        <p class="text-muted small m-0" id="riderDetails">Motorcycle &bull; Rating: â­ 4.9</p>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button id="gpsToggleButton" class="btn btn-primary btn-sm rounded-pill px-3" onclick="startGpsTracking()">
+                        <i class="bi bi-broadcast-pin me-1"></i>Share Live Location
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="loadAssignedDeliveries()">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Refresh Deliveries
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Route Map -->
+        <div class="bh-card p-4 mb-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
+                <h5 class="fw-bold m-0"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Live Route</h5>
+                <span id="riderMapStatus" class="badge bg-secondary-subtle text-secondary border px-2 py-1">
+                    <i class="bi bi-broadcast me-1"></i>Location sharing off
+                </span>
+            </div>
+            <div id="riderMap" style="height: 320px; width: 100%; border-radius: 12px; z-index: 1;" class="border"></div>
+            <div class="d-flex flex-wrap gap-3 align-items-center mt-3 small text-muted">
+                <span class="d-inline-flex align-items-center gap-1"><span class="bh-map-dot" style="background:#EF4444"></span>Pickup</span>
+                <span class="d-inline-flex align-items-center gap-1"><span class="bh-map-dot" style="background:#3B82F6"></span>You</span>
+                <span class="d-inline-flex align-items-center gap-1"><span class="bh-map-dot" style="background:#10B981"></span>Customer</span>
+                <span class="ms-auto" id="riderMapHint">Tap "Share Live Location" to broadcast your position.</span>
+            </div>
+        </div>
+
+        <!-- Assigned Orders Section -->
+        <h4 class="fw-bold mb-3"><i class="bi bi-box-seam text-primary me-2"></i>Assigned Deliveries</h4>
+
+        <div id="deliveriesList">
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="text-muted mt-2">Loading assigned deliveries...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center small text-secondary">
+            &copy; 2026 BiteHub Food Delivery Management System. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Leaflet JS for Live Map -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- BiteHub Core API JS -->
+    <script src="/js/api.js"></script>
+    <!-- BiteHub shared map helpers -->
+    <script src="/js/map.js"></script>
+    <script>
+        let myDeliveries = [];
+        let gpsWatchId = null;
+        let lastLocationSentAt = 0;
+
+        // Live route map state
+        let riderMap = null;
+        let riderMapPickup = null;
+        let riderMapCustomer = null;
+        let riderMapMe = null;
+        let ownPosition = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderNavbar('delivery-dash');
+            if (!Auth.requireAuth(['ROLE_DELIVERY', 'ROLE_ADMIN'])) return;
+
+            const user = Auth.getUser();
+            if (user) {
+                document.getElementById('riderName').textContent = user.name;
+                document.getElementById('riderDetails').textContent = `${user.phone || 'Courier'} &bull; Campus Zone`;
+            }
+
+            loadAssignedDeliveries();
+            window.addEventListener('bitehub:order-updated', loadAssignedDeliveries);
+        });
+
+        async function loadAssignedDeliveries() {
+            const container = document.getElementById('deliveriesList');
+            try {
+                myDeliveries = await apiRequest('/deliveries/my-deliveries');
+                if (!myDeliveries || myDeliveries.length === 0) {
+                    container.innerHTML = `
+                        <div class="bh-card p-5 text-center">
+                            <i class="bi bi-check-circle text-success display-4 d-block mb-3"></i>
+                            <h5 class="fw-bold text-secondary">No Pending Deliveries</h5>
+                            <p class="text-muted small">You are all caught up! New orders assigned by restaurants will appear here.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = myDeliveries.map(o => `
+                    <div class="bh-card p-4 mb-3 border-start border-4 ${o.orderStatus === 'DELIVERED' ? 'border-success' : 'border-primary'}">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-3 gap-2">
+                            <div>
+                                <span class="badge bg-light text-dark border me-2">#${o.orderNumber}</span>
+                                <span class="fw-bold text-dark fs-5">${Utils.escapeHTML(o.restaurantName)}</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                ${getStatusBadge(o.orderStatus)}
+                                <span class="fw-bold text-primary fs-5 ms-2">${formatCurrency(o.totalAmount)}</span>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-5">
+                                <h6 class="fw-bold small text-muted text-uppercase mb-2"><i class="bi bi-geo text-danger me-1"></i>Pickup (Kitchen)</h6>
+                                <p class="small text-dark mb-1"><strong>${Utils.escapeHTML(o.restaurantName)}</strong></p>
+                                <p class="small text-muted mb-1">${Utils.escapeHTML(o.restaurantAddress) || 'Campus Central'}</p>
+                                <p class="small text-muted mb-0"><i class="bi bi-telephone me-1"></i>${Utils.escapeHTML(o.restaurantPhone) || 'N/A'}</p>
+                            </div>
+
+                            <div class="col-md-5">
+                                <h6 class="fw-bold small text-muted text-uppercase mb-2"><i class="bi bi-geo-alt-fill text-success me-1"></i>Delivery (Customer)</h6>
+                                <p class="small text-dark mb-1"><strong>${Utils.escapeHTML(o.customerName)}</strong></p>
+                                <p class="small text-muted mb-1">${Utils.escapeHTML(o.deliveryAddressText)}</p>
+                                <p class="small text-muted mb-0"><i class="bi bi-telephone me-1"></i>${Utils.escapeHTML(o.customerPhone) || 'N/A'}</p>
+                                ${o.specialInstructions ? `<div class="badge bg-warning-subtle text-dark border mt-1">Note: "${Utils.escapeHTML(o.specialInstructions)}"</div>` : ''}
+                            </div>
+
+                            <div class="col-md-2 d-flex flex-column justify-content-center align-items-end gap-2">
+                                ${o.paymentMethod === 'CASH_ON_DELIVERY' && o.orderStatus !== 'DELIVERED' ? `
+                                    <div class="badge bg-danger p-2 text-wrap text-center w-100">
+                                        Collect: ${formatCurrency(o.totalAmount)}
+                                    </div>
+                                ` : ''}
+
+                                ${o.orderStatus === 'READY_FOR_PICKUP' ? `
+                                    <button class="btn btn-warning btn-sm w-100 fw-bold" onclick="updateRiderStatus(${o.id}, 'OUT_FOR_DELIVERY')">
+                                        <i class="bi bi-box-arrow-up-right me-1"></i>Pick Up Order
+                                    </button>
+                                ` : o.orderStatus === 'OUT_FOR_DELIVERY' ? `
+                                    <button class="btn btn-success btn-sm w-100 fw-bold" onclick="updateRiderStatus(${o.id}, 'DELIVERED')">
+                                        <i class="bi bi-check2-circle me-1"></i>Mark Delivered
+                                    </button>
+                                ` : `
+                                    <span class="badge bg-secondary p-2 w-100">Completed</span>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                container.innerHTML = `<div class="alert alert-danger">${err.message}</div>`;
+            } finally {
+                refreshRiderMap();
+            }
+        }
+
+        async function updateRiderStatus(orderId, status) {
+            try {
+                await apiRequest(`/deliveries/orders/${orderId}/status?status=${status}`, 'PUT');
+                showToast(`Order updated to ${status.replace(/_/g, ' ')}!`, 'success');
+                loadAssignedDeliveries();
+                if (status === 'OUT_FOR_DELIVERY') startGpsTracking();
+            } catch (e) {
+                alert('Status update error: ' + e.message);
+            }
+        }
+
+        function startGpsTracking() {
+            if (!navigator.geolocation) {
+                showToast('GPS is not supported by this browser.', 'warning');
+                return;
+            }
+            if (gpsWatchId !== null) return;
+            gpsWatchId = navigator.geolocation.watchPosition(sendCurrentLocation, locationError, {
+                enableHighAccuracy: true,
+                maximumAge: 5000,
+                timeout: 15000
+            });
+            document.getElementById('gpsToggleButton').innerHTML = '<i class="bi bi-broadcast-pin me-1"></i>Sharing Location';
+            document.getElementById('gpsToggleButton').disabled = true;
+            setRiderMapSharing(true);
+            showToast('Live location sharing started.', 'success');
+        }
+
+        async function sendCurrentLocation(position) {
+            // Reflect the rider's own movement on the map immediately, regardless of throttled posting.
+            ownPosition = [position.coords.latitude, position.coords.longitude];
+            updateOwnMarker();
+
+            const activeOrder = myDeliveries.find(order => order.orderStatus === 'OUT_FOR_DELIVERY');
+            if (!activeOrder) return;
+            const now = Date.now();
+            if (now - lastLocationSentAt < 10000) return;
+            lastLocationSentAt = now;
+            try {
+                await apiRequest(`/deliveries/orders/${activeOrder.id}/location`, 'PUT', {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude
+                });
+            } catch (error) {
+                console.warn('Location update failed', error);
+            }
+        }
+
+        function locationError(error) {
+            showToast(`Location sharing unavailable: ${error.message}`, 'warning');
+            if (gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId);
+            gpsWatchId = null;
+            const button = document.getElementById('gpsToggleButton');
+            button.innerHTML = '<i class="bi bi-broadcast-pin me-1"></i>Share Live Location';
+            button.disabled = false;
+            setRiderMapSharing(false);
+        }
+
+        // --- Live route map ---
+        function activeDeliveryForMap() {
+            if (!myDeliveries || myDeliveries.length === 0) return null;
+            return myDeliveries.find(o => o.orderStatus === 'OUT_FOR_DELIVERY')
+                || myDeliveries.find(o => o.orderStatus === 'READY_FOR_PICKUP')
+                || myDeliveries[0];
+        }
+
+        function refreshRiderMap() {
+            const container = document.getElementById('riderMap');
+            if (!container || typeof L === 'undefined' || typeof BiteHubMap === 'undefined') return;
+
+            const order = activeDeliveryForMap();
+            if (!order) return;
+
+            const coords = BiteHubMap.resolve(order);
+
+            if (!riderMap) {
+                riderMap = L.map('riderMap').setView(coords.restaurant, 14);
+                BiteHubMap.tiles().addTo(riderMap);
+
+                const routeLine = L.polyline(BiteHubMap.route(coords.restaurant, coords.customer), {
+                    color: '#FF5722', weight: 4, opacity: 0.7, dashArray: '8, 10', lineJoin: 'round'
+                }).addTo(riderMap);
+
+                riderMapPickup = L.marker(coords.restaurant, { icon: BiteHubMap.icon('restaurant'), zIndexOffset: 200 })
+                    .bindPopup(`<strong>${Utils.escapeHTML(order.restaurantName) || 'Pickup'}</strong><br><small class="text-muted">${Utils.escapeHTML(order.restaurantAddress) || ''}</small>`)
+                    .addTo(riderMap);
+
+                riderMapCustomer = L.marker(coords.customer, { icon: BiteHubMap.icon('customer'), zIndexOffset: 200 })
+                    .bindPopup(`<strong>${Utils.escapeHTML(order.customerName) || 'Customer'}</strong><br><small class="text-muted">${Utils.escapeHTML(order.deliveryAddressText) || ''}</small>`)
+                    .addTo(riderMap);
+
+                riderMapMe = L.marker(ownPosition || coords.restaurant, { icon: BiteHubMap.icon('rider'), zIndexOffset: 1000 })
+                    .bindPopup('<strong>You</strong>')
+                    .addTo(riderMap);
+
+                riderMap.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
+                setTimeout(() => { if (riderMap) riderMap.invalidateSize(); }, 80);
+            } else {
+                riderMapPickup.setLatLng(coords.restaurant);
+                riderMapCustomer.setLatLng(coords.customer);
+            }
+
+            updateOwnMarker();
+        }
+
+        function updateOwnMarker() {
+            if (riderMapMe && ownPosition) riderMapMe.setLatLng(ownPosition);
+        }
+
+        function setRiderMapSharing(sharing) {
+            const status = document.getElementById('riderMapStatus');
+            const hint = document.getElementById('riderMapHint');
+            if (status) {
+                status.className = sharing
+                    ? 'badge bg-success-subtle text-success border border-success-subtle px-2 py-1'
+                    : 'badge bg-secondary-subtle text-secondary border px-2 py-1';
+                status.innerHTML = sharing
+                    ? '<i class="bi bi-broadcast-pin me-1"></i>Sharing live location'
+                    : '<i class="bi bi-broadcast me-1"></i>Location sharing off';
+            }
+            if (hint) {
+                hint.textContent = sharing
+                    ? 'Your live position updates on the customer\'s tracking page too.'
+                    : 'Tap "Share Live Location" to broadcast your position.';
+            }
+        }
+    </script>
+</body>
+</html>

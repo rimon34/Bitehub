@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BiteHub - Create Account</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+    <!-- Header Navigation Container -->
+    <div id="navbar-container"></div>
+
+    <main class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="bh-card p-4 p-md-5 shadow-lg border-0 rounded-4">
+                    <div class="text-center mb-4">
+                        <div class="display-6 text-primary mb-2">
+                            <i class="bi bi-person-plus-fill"></i>
+                        </div>
+                        <h3 class="fw-bold text-dark">Join BiteHub</h3>
+                        <p class="text-muted small">Choose your role to get started</p>
+                    </div>
+
+                    <!-- Role Selector Pill -->
+                    <div class="d-flex bg-light p-1 rounded-pill border mb-4">
+                        <button type="button" class="btn btn-sm rounded-pill flex-fill fw-semibold role-tab active" data-role="ROLE_CUSTOMER" onclick="selectRole('ROLE_CUSTOMER')">
+                            Customer
+                        </button>
+                        <button type="button" class="btn btn-sm rounded-pill flex-fill fw-semibold role-tab text-secondary" data-role="ROLE_RESTAURANT" onclick="selectRole('ROLE_RESTAURANT')">
+                            Restaurant
+                        </button>
+                        <button type="button" class="btn btn-sm rounded-pill flex-fill fw-semibold role-tab text-secondary" data-role="ROLE_DELIVERY" onclick="selectRole('ROLE_DELIVERY')">
+                            Delivery Rider
+                        </button>
+                        <button type="button" class="btn btn-sm rounded-pill flex-fill fw-semibold role-tab text-secondary" data-role="ROLE_ADMIN" onclick="selectRole('ROLE_ADMIN')">
+                            <i class="bi bi-shield-lock me-1"></i>Admin
+                        </button>
+                    </div>
+
+                    <div id="registerAlert" class="alert alert-danger py-2 small" style="display: none;"></div>
+
+                    <form id="registerForm" onsubmit="handleRegister(event)">
+                        <input type="hidden" id="selectedRole" value="ROLE_CUSTOMER">
+
+                        <!-- Common Account Fields -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small">Full Name</label>
+                                <input type="text" id="regName" class="form-control" placeholder="John Doe" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small">Phone Number</label>
+                                <input type="tel" id="regPhone" class="form-control" placeholder="+1 555-0199" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Email Address</label>
+                            <input type="email" id="regEmail" class="form-control" placeholder="name@example.com" required>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small">Password (Min 6 chars)</label>
+                                <input type="password" id="regPassword" class="form-control" placeholder="••••••••" minlength="6" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small">Confirm Password</label>
+                                <input type="password" id="regConfirmPassword" class="form-control" placeholder="••••••••" minlength="6" required>
+                                <div id="confirmPasswordError" class="form-text text-danger small" style="display: none;">
+                                    <i class="bi bi-exclamation-circle me-1"></i>Passwords do not match.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Restaurant Specific Fields -->
+                        <div id="restaurantFields" style="display: none;" class="p-3 bg-light rounded-3 border mb-3">
+                            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-shop me-2 text-primary"></i>Restaurant Details</h6>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Restaurant Name</label>
+                                <input type="text" id="restaurantName" class="form-control" placeholder="e.g. Sizzle Shack">
+                            </div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold small">Cuisine Type</label>
+                                    <select id="cuisineType" class="form-select">
+                                        <option value="American">American / Burgers</option>
+                                        <option value="Italian">Italian / Pizza</option>
+                                        <option value="Indian">Indian / Biryani</option>
+                                        <option value="Japanese">Japanese / Sushi</option>
+                                        <option value="Chinese">Chinese</option>
+                                        <option value="Mexican">Mexican</option>
+                                        <option value="Cafe">Cafe & Bakery</option>
+                                        <option value="Fast Food">Fast Food</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold small">Store Phone</label>
+                                    <input type="tel" id="restaurantPhone" class="form-control" placeholder="Store Contact">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Restaurant Address</label>
+                                <input type="text" id="restaurantAddress" class="form-control" placeholder="Street Address, Campus Area">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label fw-semibold small">Short Description</label>
+                                <textarea id="restaurantDescription" class="form-control" rows="2" placeholder="Tell diners about your specialty dishes..."></textarea>
+                            </div>
+                            <div class="form-text text-primary small">
+                                <i class="bi bi-info-circle me-1"></i> New restaurants are reviewed and approved by the Administrator before going live on the platform.
+                            </div>
+                        </div>
+
+                        <!-- Delivery Specific Fields -->
+                        <div id="deliveryFields" style="display: none;" class="p-3 bg-light rounded-3 border mb-3">
+                            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-bicycle me-2 text-primary"></i>Rider Details</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold small">Vehicle Type</label>
+                                    <select id="vehicleType" class="form-select">
+                                        <option value="Motorcycle">Motorcycle</option>
+                                        <option value="Bicycle">Bicycle</option>
+                                        <option value="Electric Scooter">Electric Scooter</option>
+                                        <option value="Car">Car</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold small">Driver's License Number</label>
+                                    <input type="text" id="licenseNumber" class="form-control" placeholder="DL-XXXX-XXXX">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Admin Specific Fields -->
+                        <div id="adminFields" style="display: none;" class="p-3 bg-danger bg-opacity-10 border border-danger rounded-3 mb-3">
+                            <h6 class="fw-bold text-danger mb-2"><i class="bi bi-shield-lock me-2"></i>Administrator Setup</h6>
+                            <p class="small text-muted mb-2">Creating an Administrator account requires the system secret key.</p>
+                            <div>
+                                <label class="form-label fw-semibold small text-dark">Admin Secret Key</label>
+                                <input type="password" id="adminSecretKey" class="form-control" placeholder="Enter secret key">
+                                <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">Default system key: <code>admin@bitehub2026</code></small>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="regBtn" class="btn btn-bh-primary w-100 py-2 fw-bold rounded-3">
+                            Create Account
+                        </button>
+                    </form>
+
+                    <div class="text-center mt-4 pt-3 border-top small text-muted">
+                        Already have an account? <a href="/login.html" class="fw-bold text-primary text-decoration-none">Sign In</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- BiteHub Core API JS -->
+    <script src="/js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            renderNavbar('register');
+            const urlParams = new URLSearchParams(window.location.search);
+            const roleParam = urlParams.get('role');
+            if (roleParam === 'restaurant') {
+                selectRole('ROLE_RESTAURANT');
+            } else if (roleParam === 'delivery') {
+                selectRole('ROLE_DELIVERY');
+            }
+
+            document.getElementById('regPassword').addEventListener('input', validatePasswordMatch);
+            document.getElementById('regConfirmPassword').addEventListener('input', validatePasswordMatch);
+        });
+
+        function validatePasswordMatch() {
+            const password = document.getElementById('regPassword').value;
+            const confirmField = document.getElementById('regConfirmPassword');
+            const error = document.getElementById('confirmPasswordError');
+            const mismatch = confirmField.value.length > 0 && password !== confirmField.value;
+            error.style.display = mismatch ? 'block' : 'none';
+            confirmField.classList.toggle('is-invalid', mismatch);
+            return !mismatch;
+        }
+
+        function selectRole(role) {
+            document.getElementById('selectedRole').value = role;
+            document.querySelectorAll('.role-tab').forEach(tab => {
+                if (tab.getAttribute('data-role') === role) {
+                    tab.classList.add('active', 'btn-primary', 'text-white');
+                    tab.classList.remove('text-secondary');
+                } else {
+                    tab.classList.remove('active', 'btn-primary', 'text-white');
+                    tab.classList.add('text-secondary');
+                }
+            });
+
+            document.getElementById('restaurantFields').style.display = role === 'ROLE_RESTAURANT' ? 'block' : 'none';
+            document.getElementById('deliveryFields').style.display = role === 'ROLE_DELIVERY' ? 'block' : 'none';
+            document.getElementById('adminFields').style.display = role === 'ROLE_ADMIN' ? 'block' : 'none';
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const alertBox = document.getElementById('registerAlert');
+            const submitBtn = document.getElementById('regBtn');
+
+            alertBox.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating account...';
+
+            const role = document.getElementById('selectedRole').value;
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+            if (password !== confirmPassword) {
+                validatePasswordMatch();
+                alertBox.textContent = 'Passwords do not match. Please re-enter your password.';
+                alertBox.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Account';
+                return;
+            }
+
+            const payload = {
+                name: document.getElementById('regName').value.trim(),
+                email: document.getElementById('regEmail').value.trim(),
+                password: document.getElementById('regPassword').value,
+                phone: document.getElementById('regPhone').value.trim(),
+                role: role
+            };
+
+            if (role === 'ROLE_RESTAURANT') {
+                payload.restaurantName = document.getElementById('restaurantName').value.trim();
+                payload.cuisineType = document.getElementById('cuisineType').value;
+                payload.restaurantPhone = document.getElementById('restaurantPhone').value.trim();
+                payload.restaurantAddress = document.getElementById('restaurantAddress').value.trim();
+                payload.restaurantDescription = document.getElementById('restaurantDescription').value.trim();
+            } else if (role === 'ROLE_DELIVERY') {
+                payload.vehicleType = document.getElementById('vehicleType').value;
+                payload.licenseNumber = document.getElementById('licenseNumber').value.trim();
+            } else if (role === 'ROLE_ADMIN') {
+                payload.adminSecretKey = document.getElementById('adminSecretKey').value.trim();
+            }
+
+            try {
+                const response = await apiRequest('/auth/register', 'POST', payload);
+                Auth.setToken(response.token);
+                Auth.setUser({
+                    id: response.id,
+                    name: response.name,
+                    email: response.email,
+                    role: response.role,
+                    restaurantId: response.restaurantId,
+                    deliveryPersonnelId: response.deliveryPersonnelId
+                });
+
+                showToast('Account created successfully!', 'success');
+                setTimeout(() => {
+                    if (response.role === 'ROLE_ADMIN') {
+                        window.location.href = '/admin-dashboard.html';
+                    } else if (response.role === 'ROLE_RESTAURANT') {
+                        alert('Your restaurant account has been submitted! Once approved by an Admin, your menu will be visible to all customers.');
+                        window.location.href = '/restaurant-dashboard.html';
+                    } else if (response.role === 'ROLE_DELIVERY') {
+                        window.location.href = '/delivery-dashboard.html';
+                    } else {
+                        window.location.href = '/restaurants.html';
+                    }
+                }, 500);
+            } catch (error) {
+                alertBox.textContent = error.message;
+                alertBox.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Account';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+# Maven build output
+target/
+
+# Local tooling and generated files
+work/
+.vscode/
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+
+# Logs and local tunnel binary
+*.log
+cloudflared.exe
+
+# IDE and OS files
+.idea/
+*.iml
+.DS_Store
+Thumbs.db

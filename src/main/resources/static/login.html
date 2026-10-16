@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BiteHub - Log In</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+    <!-- Header Navigation Container -->
+    <div id="navbar-container"></div>
+
+    <main class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-md-7 col-lg-5">
+                <div class="bh-card p-4 p-md-5 shadow-lg border-0 rounded-4">
+                    <div class="text-center mb-4">
+                        <div class="display-6 text-primary mb-2">
+                            <i class="bi bi-bag-heart-fill"></i>
+                        </div>
+                        <h3 class="fw-bold text-dark">Welcome Back</h3>
+                        <p class="text-muted small">Sign in with your BiteHub account</p>
+                    </div>
+
+                    <!-- 1-Click Demo Login Panel -->
+                    <div class="bg-light p-3 rounded-3 border mb-4">
+                        <small class="fw-bold text-uppercase text-secondary d-block mb-2 text-center">
+                            <i class="bi bi-lightning-charge-fill text-warning me-1"></i> Quick Admin Login
+                        </small>
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <button type="button" class="btn btn-sm btn-outline-danger w-100 fw-semibold py-2" onclick="fillAndLogin('admin@bitehub.com', 'admin123')">
+                                    <i class="bi bi-shield-lock me-1"></i> Sign In as Default Admin (admin@bitehub.com)
+                                </button>
+                            </div>
+                        </div>
+                        <div class="text-center mt-2">
+                            <small class="text-muted" style="font-size: 0.75rem;">
+                                Clean DB: Register new <b>Customer</b>, <b>Restaurant</b>, or <b>Rider</b> via <a href="/register.html" class="fw-semibold">Sign Up</a>
+                            </small>
+                        </div>
+                    </div>
+
+                    <div id="loginAlert" class="alert alert-danger py-2 small" style="display: none;"></div>
+
+                    <form id="loginForm" onsubmit="handleLogin(event)">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Email Address</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white text-muted"><i class="bi bi-envelope"></i></span>
+                                <input type="email" id="loginEmail" class="form-control" placeholder="name@example.com" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold small">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white text-muted"><i class="bi bi-lock"></i></span>
+                                <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="loginBtn" class="btn btn-bh-primary w-100 py-2 fw-bold rounded-3">
+                            Sign In
+                        </button>
+                    </form>
+
+                    <div class="text-center mt-4 pt-3 border-top small text-muted">
+                        Don't have an account? <a href="/register.html" class="fw-bold text-primary text-decoration-none">Create Account</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- BiteHub Core API JS -->
+    <script src="/js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            renderNavbar('login');
+            // If already logged in, redirect to proper portal
+            if (Auth.isLoggedIn()) {
+                redirectToDashboard();
+            }
+        });
+
+        function fillAndLogin(email, password) {
+            document.getElementById('loginEmail').value = email;
+            document.getElementById('loginPassword').value = password;
+            document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const alertBox = document.getElementById('loginAlert');
+            const submitBtn = document.getElementById('loginBtn');
+
+            alertBox.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Signing in...';
+
+            try {
+                const response = await apiRequest('/auth/login', 'POST', { email, password });
+                Auth.setToken(response.token);
+                Auth.setUser({
+                    id: response.id,
+                    name: response.name,
+                    email: response.email,
+                    role: response.role,
+                    restaurantId: response.restaurantId,
+                    deliveryPersonnelId: response.deliveryPersonnelId
+                });
+
+                showToast(`Welcome back, ${response.name}!`, 'success');
+                setTimeout(() => {
+                    redirectToDashboard();
+                }, 500);
+            } catch (error) {
+                alertBox.textContent = error.message;
+                alertBox.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Sign In';
+            }
+        }
+
+        function redirectToDashboard() {
+            const user = Auth.getUser();
+            if (!user) return;
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirect = urlParams.get('redirect');
+            if (redirect && redirect.startsWith('/') && !redirect.startsWith('//')) {
+                window.location.href = redirect;
+                return;
+            }
+
+            switch (user.role) {
+                case 'ROLE_ADMIN':
+                    window.location.href = '/admin-dashboard.html';
+                    break;
+                case 'ROLE_RESTAURANT':
+                    window.location.href = '/restaurant-dashboard.html';
+                    break;
+                case 'ROLE_DELIVERY':
+                    window.location.href = '/delivery-dashboard.html';
+                    break;
+                case 'ROLE_CUSTOMER':
+                default:
+                    window.location.href = '/restaurants.html';
+                    break;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,389 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BiteHub - Customer Dashboard</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+    <!-- Header Navigation Container -->
+    <div id="navbar-container"></div>
+
+    <main class="container my-5">
+        <div class="row g-4">
+            <!-- Profile Sidebar -->
+            <div class="col-lg-4">
+                <div class="bh-card p-4 text-center mb-4">
+                    <!-- Interactive Avatar Upload -->
+                    <div class="position-relative d-inline-block mx-auto mb-3">
+                        <div id="avatarContainer" class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center overflow-hidden border shadow-sm" style="width: 96px; height: 96px; font-size: 2.5rem;">
+                            <i id="defaultAvatarIcon" class="bi bi-person-fill"></i>
+                            <img id="userAvatarImg" src="" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                        </div>
+                        <button class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0 shadow" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;" onclick="document.getElementById('avatarFileInput').click()" title="Change Profile Photo">
+                            <i class="bi bi-camera-fill small"></i>
+                        </button>
+                        <input type="file" id="avatarFileInput" accept="image/*" style="display: none;" onchange="handleAvatarUpload(event)">
+                    </div>
+                    <h4 class="fw-bold text-dark m-0" id="dashName">Customer Name</h4>
+                    <p class="text-muted small mb-2" id="dashEmail">customer@example.com</p>
+                    <span class="badge bg-primary px-3 py-1">Customer</span>
+
+                    <hr class="my-3">
+                    <div class="d-flex flex-column gap-2 text-start">
+                        <button class="btn btn-sm btn-light border text-start" onclick="openProfileModal()">
+                            <i class="bi bi-pencil me-2 text-primary"></i>Edit Profile
+                        </button>
+                        <a href="/order-history.html" class="btn btn-sm btn-light border text-start">
+                            <i class="bi bi-receipt me-2 text-success"></i>Order History
+                        </a>
+                        <button class="btn btn-sm btn-outline-danger text-start mt-2" onclick="Auth.logout()">
+                            <i class="bi bi-box-arrow-right me-2"></i>Log Out
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Saved Delivery Addresses Card -->
+                <div class="bh-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold m-0"><i class="bi bi-geo-alt-fill text-danger me-1"></i>Saved Addresses</h6>
+                        <button class="btn btn-sm btn-outline-primary" onclick="openAddAddressModal()">+ Add</button>
+                    </div>
+                    <div id="savedAddressesList" class="d-flex flex-column gap-2">
+                        <p class="text-muted small">Loading addresses...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="col-lg-8">
+                <!-- Active Orders -->
+                <div class="bh-card p-4 mb-4">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-bag-check-fill text-warning me-2"></i>Active Orders in Progress</h5>
+                    <div id="activeOrdersList">
+                        <p class="text-muted small">Checking active orders...</p>
+                    </div>
+                </div>
+
+                <!-- My Complaints / Tickets -->
+                <div class="bh-card p-4">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-flag-fill text-danger me-2"></i>Support Tickets & Complaints</h5>
+                    <div id="complaintsList">
+                        <p class="text-muted small">Checking complaints...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Address Modal -->
+    <div class="modal fade" id="addAddressModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Add Delivery Address</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addAddressForm" onsubmit="handleAddAddress(event)">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Label (e.g. Home, Campus, Dorm)</label>
+                            <input type="text" id="addrLabel" class="form-control" placeholder="Home" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Street Address / Room No.</label>
+                            <input type="text" id="addrStreet" class="form-control" placeholder="123 University Hall" required>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label fw-semibold small">City</label>
+                                <input type="text" id="addrCity" class="form-control" placeholder="Campus City" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-semibold small">Postal Code</label>
+                                <input type="text" id="addrPostal" class="form-control" placeholder="1234">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Contact Phone</label>
+                            <input type="tel" id="addrPhone" class="form-control" placeholder="+1 555-0199">
+                        </div>
+                        <button type="submit" class="btn btn-bh-primary w-100">Save Address</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div class="modal fade" id="profileModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Edit Profile</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Name</label>
+                        <input type="text" id="editName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Phone</label>
+                        <input type="tel" id="editPhone" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-bh-primary" onclick="saveProfile()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center small text-secondary">
+            &copy; 2026 BiteHub Food Delivery Management System. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- BiteHub Core API JS -->
+    <script src="/js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            renderNavbar('dashboard');
+            if (!Auth.requireAuth(['ROLE_CUSTOMER'])) return;
+
+            loadProfile();
+            loadActiveOrders();
+            window.addEventListener('bitehub:order-updated', loadActiveOrders);
+            loadAddresses();
+            loadComplaints();
+        });
+
+        async function loadProfile() {
+            const user = Auth.getUser();
+            if (user) {
+                document.getElementById('dashName').textContent = user.name;
+                document.getElementById('dashEmail').textContent = user.email;
+                displayUserAvatar(user.profileImageUrl);
+            }
+            try {
+                const fresh = await apiRequest('/users/profile');
+                if (fresh) {
+                    document.getElementById('dashName').textContent = fresh.name;
+                    document.getElementById('dashEmail').textContent = fresh.email;
+                    displayUserAvatar(fresh.profileImageUrl);
+                    const cur = Auth.getUser();
+                    if (cur) {
+                        cur.profileImageUrl = fresh.profileImageUrl;
+                        cur.name = fresh.name;
+                        Auth.setUser(cur);
+                        renderNavbar('dashboard');
+                    }
+                }
+            } catch (ignored) {}
+        }
+
+        function displayUserAvatar(url) {
+            const img = document.getElementById('userAvatarImg');
+            const icon = document.getElementById('defaultAvatarIcon');
+            if (url) {
+                img.src = url;
+                img.style.display = 'block';
+                icon.style.display = 'none';
+            } else {
+                img.style.display = 'none';
+                icon.style.display = 'block';
+            }
+        }
+
+        async function handleAvatarUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                showToast('Uploading profile photo...', 'info');
+                const token = Auth.getToken();
+                const res = await fetch('/api/upload/image', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Upload failed');
+
+                // Save URL in user profile in backend
+                await apiRequest('/users/profile', 'PUT', { profileImageUrl: data.url });
+
+                displayUserAvatar(data.url);
+                const cur = Auth.getUser();
+                if (cur) {
+                    cur.profileImageUrl = data.url;
+                    Auth.setUser(cur);
+                }
+                renderNavbar('dashboard');
+                showToast('Profile photo updated successfully!', 'success');
+            } catch (err) {
+                alert('Photo upload failed: ' + err.message);
+            }
+        }
+
+        function openProfileModal() {
+            const user = Auth.getUser();
+            document.getElementById('editName').value = user.name;
+            document.getElementById('editPhone').value = user.phone || '';
+            new bootstrap.Modal(document.getElementById('profileModal')).show();
+        }
+
+        async function saveProfile() {
+            const name = document.getElementById('editName').value.trim();
+            const phone = document.getElementById('editPhone').value.trim();
+            try {
+                const updated = await apiRequest('/users/profile', 'PUT', { name, phone });
+                const current = Auth.getUser();
+                current.name = updated.name;
+                current.phone = updated.phone;
+                Auth.setUser(current);
+                loadProfile();
+                renderNavbar('dashboard');
+                showToast('Profile updated!', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('profileModal')).hide();
+            } catch (err) {
+                alert('Update error: ' + err.message);
+            }
+        }
+
+        async function loadActiveOrders() {
+            const container = document.getElementById('activeOrdersList');
+            try {
+                const orders = await apiRequest('/orders/my-orders');
+                const active = orders.filter(o => o.orderStatus !== 'DELIVERED' && o.orderStatus !== 'CANCELLED');
+
+                if (active.length === 0) {
+                    container.innerHTML = `<p class="text-muted small m-0 py-3 text-center">No active orders right now.</p>`;
+                    return;
+                }
+
+                container.innerHTML = active.map(o => `
+                    <div class="p-3 border rounded-3 mb-2 d-flex justify-content-between align-items-center bg-light">
+                        <div>
+                            <div class="fw-bold text-dark">${Utils.escapeHTML(o.restaurantName)}</div>
+                            <small class="text-muted">Order #${o.orderNumber} &bull; ${formatCurrency(o.totalAmount)}</small>
+                            <div class="mt-1">${getStatusBadge(o.orderStatus)}</div>
+                        </div>
+                        <a href="/order-tracking.html?orderNumber=${o.orderNumber}" class="btn btn-sm btn-bh-primary rounded-pill px-3">
+                            <i class="bi bi-geo-alt me-1"></i>Track Live
+                        </a>
+                    </div>
+                `).join('');
+            } catch (e) {
+                container.innerHTML = `<p class="text-danger small">Error loading orders.</p>`;
+            }
+        }
+
+        async function loadAddresses() {
+            const container = document.getElementById('savedAddressesList');
+            try {
+                const addresses = await apiRequest('/users/addresses');
+                if (!addresses || addresses.length === 0) {
+                    container.innerHTML = `<p class="text-muted small m-0 text-center py-2">No saved addresses yet.</p>`;
+                    return;
+                }
+
+                container.innerHTML = addresses.map(a => `
+                    <div class="p-2 border rounded-3 d-flex justify-content-between align-items-center small">
+                        <div>
+                            <strong>${Utils.escapeHTML(a.label)}:</strong> ${Utils.escapeHTML(a.streetAddress)}, ${Utils.escapeHTML(a.city)}
+                        </div>
+                        <button class="btn btn-sm text-danger p-0 ms-2" onclick="deleteAddress(${a.id})"><i class="bi bi-trash"></i></button>
+                    </div>
+                `).join('');
+            } catch (e) {
+                container.innerHTML = `<p class="text-danger small">Error loading addresses.</p>`;
+            }
+        }
+
+        function openAddAddressModal() {
+            new bootstrap.Modal(document.getElementById('addAddressModal')).show();
+        }
+
+        async function handleAddAddress(e) {
+            e.preventDefault();
+            const payload = {
+                label: document.getElementById('addrLabel').value.trim(),
+                streetAddress: document.getElementById('addrStreet').value.trim(),
+                city: document.getElementById('addrCity').value.trim(),
+                postalCode: document.getElementById('addrPostal').value.trim(),
+                contactPhone: document.getElementById('addrPhone').value.trim()
+            };
+
+            try {
+                await apiRequest('/users/addresses', 'POST', payload);
+                showToast('Address added!', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('addAddressModal')).hide();
+                document.getElementById('addAddressForm').reset();
+                loadAddresses();
+            } catch (err) {
+                alert('Failed to add address: ' + err.message);
+            }
+        }
+
+        async function deleteAddress(id) {
+            if (confirm('Delete this address?')) {
+                try {
+                    await apiRequest(`/users/addresses/${id}`, 'DELETE');
+                    loadAddresses();
+                    showToast('Address deleted', 'info');
+                } catch (e) {
+                    alert('Error: ' + e.message);
+                }
+            }
+        }
+
+        async function loadComplaints() {
+            const container = document.getElementById('complaintsList');
+            try {
+                const list = await apiRequest('/complaints/my-complaints');
+                if (!list || list.length === 0) {
+                    container.innerHTML = `<p class="text-muted small m-0 py-3 text-center">You have not submitted any complaints.</p>`;
+                    return;
+                }
+
+                container.innerHTML = list.map(c => `
+                    <div class="p-3 border rounded-3 mb-2 bg-light">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold text-dark">${Utils.escapeHTML(c.subject)}</span>
+                            <span class="badge ${c.status === 'RESOLVED' ? 'bg-success' : c.status === 'OPEN' ? 'bg-warning text-dark' : 'bg-secondary'}">${Utils.escapeHTML(c.status)}</span>
+                        </div>
+                        <p class="text-muted small mb-2">${Utils.escapeHTML(c.description)}</p>
+                        ${c.adminNotes ? `
+                            <div class="p-2 bg-white rounded border small text-success">
+                                <strong>Admin Resolution:</strong> ${Utils.escapeHTML(c.adminNotes)}
+                            </div>
+                        ` : ''}
+                        <small class="text-secondary d-block mt-1" style="font-size: 0.75rem;">Created on ${formatDate(c.createdAt)}</small>
+                    </div>
+                `).join('');
+            } catch (e) {
+                container.innerHTML = `<p class="text-danger small">Error loading tickets.</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

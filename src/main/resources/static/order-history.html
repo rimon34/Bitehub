@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BiteHub - Order History</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+    <!-- Header Navigation Container -->
+    <div id="navbar-container"></div>
+
+    <main class="container my-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold text-dark m-0"><i class="bi bi-clock-history text-primary me-2"></i>My Order History</h2>
+                <p class="text-muted small m-0">View past orders, track deliveries, and write reviews</p>
+            </div>
+            <a href="/restaurants.html" class="btn btn-bh-primary rounded-pill btn-sm px-3"><i class="bi bi-plus me-1"></i>New Order</a>
+        </div>
+
+        <!-- Orders Table / Card List -->
+        <div id="ordersContainer">
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="text-muted mt-2">Loading orders...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Invoice Modal -->
+    <div class="modal fade" id="invoiceModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-receipt text-primary me-2"></i>Order Invoice</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="invoiceContent"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer me-1"></i>Print</button>
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Modal -->
+    <div class="modal fade" id="reviewModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-star-fill text-warning me-2"></i>Rate & Review</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="reviewOrderId">
+                    <div class="mb-3 text-center">
+                        <label class="form-label fw-bold d-block">Your Rating</label>
+                        <div class="fs-2 text-warning cursor-pointer" id="starRatingGroup">
+                            <i class="bi bi-star" data-val="1" onclick="setRating(1)"></i>
+                            <i class="bi bi-star" data-val="2" onclick="setRating(2)"></i>
+                            <i class="bi bi-star" data-val="3" onclick="setRating(3)"></i>
+                            <i class="bi bi-star" data-val="4" onclick="setRating(4)"></i>
+                            <i class="bi bi-star" data-val="5" onclick="setRating(5)"></i>
+                        </div>
+                        <input type="hidden" id="selectedStarValue" value="5">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Feedback / Experience</label>
+                        <textarea id="reviewComment" class="form-control" rows="3" placeholder="How was the food quality, taste, and packaging?"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-bh-primary" onclick="submitReview()">Submit Review</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Complaint Modal -->
+    <div class="modal fade" id="complaintModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-danger"><i class="bi bi-flag-fill me-2"></i>Raise an Issue / Complaint</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="complaintOrderId">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Issue Subject</label>
+                        <input type="text" id="complaintSubject" class="form-control" placeholder="e.g. Missing items, food spilled, wrong dish">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Detailed Description</label>
+                        <textarea id="complaintDescription" class="form-control" rows="3" placeholder="Please provide details so administration can review and assist you..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="submitComplaint()">Submit Ticket</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center small text-secondary">
+            &copy; 2026 BiteHub Food Delivery Management System. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- BiteHub Core API JS -->
+    <script src="/js/api.js"></script>
+    <script>
+        let myOrders = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderNavbar('orders');
+            if (!Auth.requireAuth()) return;
+            loadMyOrders();
+            window.addEventListener('bitehub:order-updated', loadMyOrders);
+        });
+
+        async function loadMyOrders() {
+            const container = document.getElementById('ordersContainer');
+            try {
+                myOrders = await apiRequest('/orders/my-orders');
+                if (!myOrders || myOrders.length === 0) {
+                    container.innerHTML = `
+                        <div class="bh-card p-5 text-center">
+                            <i class="bi bi-receipt text-muted display-4 d-block mb-3"></i>
+                            <h5 class="fw-bold text-secondary">No Orders Placed Yet</h5>
+                            <p class="text-muted small">Explore local restaurants and enjoy fast delivery!</p>
+                            <a href="/restaurants.html" class="btn btn-bh-primary rounded-pill px-4 mt-2">Find Food</a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = myOrders.map(o => `
+                    <div class="bh-card p-4 mb-3">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-3 gap-2">
+                            <div>
+                                <h5 class="fw-bold text-dark m-0">${Utils.escapeHTML(o.restaurantName)}</h5>
+                                <div class="text-muted small">Order #${o.orderNumber} &bull; ${formatDate(o.placedAt)}</div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                ${getStatusBadge(o.orderStatus)}
+                                <span class="fw-bold text-primary fs-5">${formatCurrency(o.totalAmount)}</span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                            <div class="small text-muted">
+                                <strong>Items:</strong> ${o.items.map(i => `${i.quantity}x ${Utils.escapeHTML(i.itemName)}`).join(', ')}
+                            </div>
+
+                            <div class="d-flex flex-wrap gap-2">
+                                <a href="/order-tracking.html?orderNumber=${o.orderNumber}" class="btn btn-sm btn-outline-primary rounded-pill">
+                                    <i class="bi bi-geo-alt me-1"></i>Track
+                                </a>
+                                <button class="btn btn-sm btn-light border rounded-pill" onclick="openInvoiceModal(${Utils.escapeHTML(JSON.stringify(o))})">
+                                    <i class="bi bi-file-earmark-text me-1"></i>Invoice
+                                </button>
+                                ${o.orderStatus === 'DELIVERED' ? `
+                                    <button class="btn btn-sm btn-outline-warning text-dark rounded-pill" onclick="openReviewModal(${o.id})">
+                                        <i class="bi bi-star-fill text-warning me-1"></i>Review
+                                    </button>
+                                ` : ''}
+                                <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="openComplaintModal(${o.id})">
+                                    <i class="bi bi-flag me-1"></i>Complaint
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                container.innerHTML = `<div class="alert alert-danger">${err.message}</div>`;
+            }
+        }
+
+        function openInvoiceModal(o) {
+            const content = document.getElementById('invoiceContent');
+            content.innerHTML = `
+                <div class="text-center pb-3 border-bottom mb-3">
+                    <h4 class="fw-bold text-primary mb-1">BiteHub Food Delivery</h4>
+                    <p class="text-muted small m-0">Order Receipt & Tax Invoice</p>
+                    <div class="small text-muted">Invoice #${o.orderNumber} &bull; ${formatDate(o.placedAt)}</div>
+                </div>
+
+                <div class="row g-2 small mb-3">
+                    <div class="col-6">
+                        <strong>Restaurant:</strong><br>${Utils.escapeHTML(o.restaurantName)}<br>${Utils.escapeHTML(o.restaurantAddress) || ''}
+                    </div>
+                    <div class="col-6 text-end">
+                        <strong>Delivered to:</strong><br>${Utils.escapeHTML(o.customerName)}<br>${Utils.escapeHTML(o.deliveryAddressText)}
+                    </div>
+                </div>
+
+                <table class="table table-sm small">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Item</th>
+                            <th class="text-center">Qty</th>
+                            <th class="text-end">Price</th>
+                            <th class="text-end">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${o.items.map(i => `
+                            <tr>
+                                <td>${Utils.escapeHTML(i.itemName)}</td>
+                                <td class="text-center">${i.quantity}</td>
+                                <td class="text-end">${formatCurrency(i.itemPrice)}</td>
+                                <td class="text-end">${formatCurrency(i.subtotal)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+
+                <div class="d-flex flex-column gap-1 small text-end pt-2 border-top">
+                    <div>Items Subtotal: <strong>${formatCurrency(o.subtotal)}</strong></div>
+                    <div>Delivery Fee: <strong>${formatCurrency(o.deliveryFee)}</strong></div>
+                    <div>Tax (5%): <strong>${formatCurrency(o.taxAmount)}</strong></div>
+                    ${o.discountAmount > 0 ? `<div class="text-success">Discount (${Utils.escapeHTML(o.appliedCouponCode)}): <strong>-${formatCurrency(o.discountAmount)}</strong></div>` : ''}
+                    <div class="fs-5 fw-bold text-dark mt-2 border-top pt-2">
+                        Total Paid: <span class="text-primary">${formatCurrency(o.totalAmount)}</span>
+                    </div>
+                    <div class="text-muted">Payment: ${o.paymentMethod.replace(/_/g, ' ')} (${o.paymentStatus})</div>
+                </div>
+            `;
+            new bootstrap.Modal(document.getElementById('invoiceModal')).show();
+        }
+
+        function openReviewModal(orderId) {
+            document.getElementById('reviewOrderId').value = orderId;
+            document.getElementById('reviewComment').value = '';
+            setRating(5);
+            new bootstrap.Modal(document.getElementById('reviewModal')).show();
+        }
+
+        function setRating(val) {
+            document.getElementById('selectedStarValue').value = val;
+            document.querySelectorAll('#starRatingGroup i').forEach(star => {
+                const starVal = parseInt(star.getAttribute('data-val'));
+                if (starVal <= val) {
+                    star.className = 'bi bi-star-fill';
+                } else {
+                    star.className = 'bi bi-star';
+                }
+            });
+        }
+
+        async function submitReview() {
+            const orderId = document.getElementById('reviewOrderId').value;
+            const rating = parseInt(document.getElementById('selectedStarValue').value);
+            const comment = document.getElementById('reviewComment').value.trim();
+
+            try {
+                await apiRequest('/reviews', 'POST', { orderId, rating, comment });
+                showToast('Thank you! Your review has been submitted.', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('reviewModal')).hide();
+            } catch (err) {
+                alert('Review error: ' + err.message);
+            }
+        }
+
+        function openComplaintModal(orderId) {
+            document.getElementById('complaintOrderId').value = orderId;
+            document.getElementById('complaintSubject').value = '';
+            document.getElementById('complaintDescription').value = '';
+            new bootstrap.Modal(document.getElementById('complaintModal')).show();
+        }
+
+        async function submitComplaint() {
+            const orderId = document.getElementById('complaintOrderId').value;
+            const subject = document.getElementById('complaintSubject').value.trim();
+            const description = document.getElementById('complaintDescription').value.trim();
+
+            if (!subject || !description) {
+                alert('Please provide both subject and description.');
+                return;
+            }
+
+            try {
+                await apiRequest('/complaints', 'POST', { orderId, subject, description });
+                showToast('Complaint ticket created! An admin will review it shortly.', 'info');
+                bootstrap.Modal.getInstance(document.getElementById('complaintModal')).hide();
+            } catch (err) {
+                alert('Submission error: ' + err.message);
+            }
+        }
+    </script>
+</body>
+</html>

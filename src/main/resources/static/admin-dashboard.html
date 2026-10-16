@@ -1,0 +1,743 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BiteHub - Administrator Control Center</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+    <!-- Header Navigation Container -->
+    <div id="navbar-container"></div>
+
+    <main class="container-fluid px-lg-5 my-4">
+        <!-- Admin Header & Platform Stats -->
+        <div class="bh-card p-4 mb-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <span class="badge bg-danger px-3 py-1 mb-1">System Administrator</span>
+                    <h2 class="fw-extrabold text-dark m-0">BiteHub Control Center</h2>
+                    <p class="text-muted small m-0">Centralized platform monitoring, approvals, and dispute management</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/reports.html" class="btn btn-bh-primary px-3 rounded-pill fw-semibold">
+                        <i class="bi bi-bar-chart-fill me-1"></i>Detailed Reports
+                    </a>
+                </div>
+            </div>
+
+            <!-- Metric Cards -->
+            <div class="row g-3 mt-3">
+                <div class="col-6 col-md-4 col-lg-2">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-primary-subtle text-primary"><i class="bi bi-people-fill"></i></div>
+                        <div>
+                            <small class="text-muted d-block">Users</small>
+                            <h4 class="fw-bold m-0" id="statUsers">0</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-success-subtle text-success"><i class="bi bi-shop"></i></div>
+                        <div>
+                            <small class="text-muted d-block">Restaurants</small>
+                            <h4 class="fw-bold m-0" id="statRestaurants">0</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-warning-subtle text-warning"><i class="bi bi-hourglass-split"></i></div>
+                        <div>
+                            <small class="text-muted d-block">Pending Verify</small>
+                            <h4 class="fw-bold m-0 text-warning" id="statPendingRest">0</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-info-subtle text-info"><i class="bi bi-receipt"></i></div>
+                        <div>
+                            <small class="text-muted d-block">Total Orders</small>
+                            <h4 class="fw-bold m-0" id="statOrders">0</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-danger-subtle text-danger"><i class="bi bi-flag-fill"></i></div>
+                        <div>
+                            <small class="text-muted d-block">Open Issues</small>
+                            <h4 class="fw-bold m-0 text-danger" id="statComplaints">0</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4 col-lg-2">
+                    <div class="stat-card bg-dark text-white">
+                        <div class="stat-icon bg-white text-dark"><i class="bi bi-cash-coin"></i></div>
+                        <div>
+                            <small class="text-white-50 d-block">Gross Sales</small>
+                            <h5 class="fw-bold m-0 text-white" id="statRevenue">$0.00</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-pills mb-4 gap-2" id="adminTabs">
+            <li class="nav-item">
+                <button class="nav-link active fw-semibold" data-bs-toggle="pill" data-bs-target="#verificationTab" onclick="loadPendingRestaurants()">
+                    <i class="bi bi-patch-check me-1"></i>Restaurant Verifications
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-semibold" data-bs-toggle="pill" data-bs-target="#usersTab" onclick="loadUsers()">
+                    <i class="bi bi-people me-1"></i>User Management
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-semibold" data-bs-toggle="pill" data-bs-target="#ordersTab" onclick="loadAllOrders()">
+                    <i class="bi bi-binoculars me-1"></i>Order Monitoring
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-semibold" data-bs-toggle="pill" data-bs-target="#complaintsTab" onclick="loadComplaints()">
+                    <i class="bi bi-chat-square-dots me-1"></i>Complaints & Tickets
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-semibold" data-bs-toggle="pill" data-bs-target="#couponsTab" onclick="loadCoupons()">
+                    <i class="bi bi-ticket-perforated me-1"></i>Coupons & Promos
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Contents -->
+        <div class="tab-content">
+            <!-- 1. Restaurant Verification Tab -->
+            <div class="tab-pane fade show active" id="verificationTab">
+                <div class="bh-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold m-0">Pending Restaurant Applications</h5>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="loadPendingRestaurants()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table align-middle table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Restaurant Name</th>
+                                    <th>Cuisine</th>
+                                    <th>Address</th>
+                                    <th>Phone</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pendingRestTableBody">
+                                <!-- Dynamic pending restaurants -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. User Management Tab -->
+            <div class="tab-pane fade" id="usersTab">
+                <div class="bh-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold m-0">All Registered Accounts</h5>
+                        <div>
+                            <button class="btn btn-sm btn-danger me-2" data-bs-toggle="modal" data-bs-target="#addAdminModal">
+                                <i class="bi bi-shield-plus me-1"></i> Add New Admin
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="loadUsers()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table align-middle table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <!-- Dynamic users -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Order Monitoring Tab -->
+            <div class="tab-pane fade" id="ordersTab">
+                <div class="bh-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold m-0">Platform-Wide Order Monitoring</h5>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="loadAllOrders()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table align-middle table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Order #</th>
+                                    <th>Date</th>
+                                    <th>Customer</th>
+                                    <th>Restaurant</th>
+                                    <th>Rider</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="allOrdersTableBody">
+                                <!-- Dynamic orders -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Complaints & Support Tab -->
+            <div class="tab-pane fade" id="complaintsTab">
+                <div class="bh-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold m-0">Customer Complaints Queue</h5>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="loadComplaints()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table align-middle table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Customer</th>
+                                    <th>Order #</th>
+                                    <th>Subject & Details</th>
+                                    <th>Status</th>
+                                    <th>Resolution</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="complaintsTableBody">
+                                <!-- Dynamic complaints -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Coupon Management Tab -->
+            <div class="tab-pane fade" id="couponsTab">
+                <div class="bh-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold m-0">Discount Coupons</h5>
+                        <button class="btn btn-bh-primary btn-sm rounded-pill px-3" onclick="openAddCouponModal()">
+                            <i class="bi bi-plus-lg me-1"></i>New Coupon
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table align-middle table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Discount</th>
+                                    <th>Min Order</th>
+                                    <th>Max Cap</th>
+                                    <th>Times Used</th>
+                                    <th>Active</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="couponsTableBody">
+                                <!-- Dynamic coupons -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Resolve Complaint Modal -->
+    <div class="modal fade" id="resolveComplaintModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Resolve Customer Complaint</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="resolveComplaintId">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Resolution Decision</label>
+                        <select id="resolveStatusSelect" class="form-select">
+                            <option value="RESOLVED">Resolved (Issue Addressed / Compensated)</option>
+                            <option value="UNDER_INVESTIGATION">Under Investigation</option>
+                            <option value="REJECTED">Reject / Invalid Complaint</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Resolution Notes / Action Taken</label>
+                        <textarea id="resolveAdminNotes" class="form-control" rows="3" placeholder="Explain how the dispute was resolved..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-bh-primary" onclick="confirmResolveComplaint()">Save Resolution</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Coupon Modal -->
+    <div class="modal fade" id="addCouponModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Create Promo Coupon</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addCouponForm" onsubmit="handleCreateCoupon(event)">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Coupon Code</label>
+                            <input type="text" id="cpnCode" class="form-control text-uppercase" placeholder="e.g. FLASH30" required>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label fw-semibold small">Discount Type</label>
+                                <select id="cpnType" class="form-select">
+                                    <option value="PERCENTAGE">Percentage (%)</option>
+                                    <option value="FIXED_AMOUNT">Fixed Amount ($)</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-semibold small">Discount Value</label>
+                                <input type="number" step="0.01" id="cpnValue" class="form-control" placeholder="20" required>
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label fw-semibold small">Min Order ($)</label>
+                                <input type="number" step="0.01" id="cpnMin" class="form-control" placeholder="15.00">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-semibold small">Max Discount ($)</label>
+                                <input type="number" step="0.01" id="cpnMax" class="form-control" placeholder="10.00">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Usage Limit</label>
+                            <input type="number" id="cpnLimit" class="form-control" placeholder="500" value="500">
+                        </div>
+                        <button type="submit" class="btn btn-bh-primary w-100">Create Coupon</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Add Admin Modal -->
+    <div class="modal fade" id="addAdminModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-shield-plus me-2"></i>Create New Administrator</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="addAdminForm" onsubmit="submitAddAdmin(event)">
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Full Name</label>
+                            <input type="text" id="adminName" class="form-control" placeholder="e.g. John Manager" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Email Address</label>
+                            <input type="email" id="adminEmail" class="form-control" placeholder="admin2@bitehub.com" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Phone Number</label>
+                            <input type="tel" id="adminPhone" class="form-control" placeholder="+1 555-0155" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">Initial Password (Min 6 chars)</label>
+                            <input type="password" id="adminPass" class="form-control" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" minlength="6" required>
+                        </div>
+                        <div class="alert alert-warning py-2 small mb-0">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i> This account will have full access to approve restaurants, manage users, view all orders, and manage coupons.
+                        </div>
+                        <div id="addAdminError" class="alert alert-danger py-2 small mt-3 mb-0 d-none"></div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" id="saveAdminBtn" class="btn btn-danger fw-semibold">Create Administrator</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center small text-secondary">
+            &copy; 2026 BiteHub Food Delivery Management System. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- BiteHub Core API JS -->
+    <script src="/js/api.js"></script>
+    <script>
+        let allUsers = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderNavbar('admin-dash');
+            if (!Auth.requireAuth(['ROLE_ADMIN'])) return;
+
+            loadAdminStats();
+            loadPendingRestaurants();
+        });
+
+        async function loadAdminStats() {
+            try {
+                const stats = await apiRequest('/admin/stats');
+                document.getElementById('statUsers').textContent = stats.totalUsers;
+                document.getElementById('statRestaurants').textContent = stats.totalRestaurants;
+                document.getElementById('statPendingRest').textContent = stats.pendingRestaurants;
+                document.getElementById('statOrders').textContent = stats.totalOrders;
+                document.getElementById('statComplaints').textContent = stats.openComplaints;
+                document.getElementById('statRevenue').textContent = formatCurrency(stats.totalRevenue);
+            } catch (e) {
+                console.error('Error loading admin stats', e);
+            }
+        }
+
+        async function loadPendingRestaurants() {
+            const tbody = document.getElementById('pendingRestTableBody');
+            try {
+                const list = await apiRequest('/admin/restaurants/pending');
+                if (!list || list.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">No pending restaurant verifications.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = list.map(r => `
+                    <tr>
+                        <td><strong>${Utils.escapeHTML(r.name)}</strong></td>
+                        <td><span class="badge bg-light text-dark border">${Utils.escapeHTML(r.cuisineType)}</span></td>
+                        <td>${Utils.escapeHTML(r.address) || 'N/A'}</td>
+                        <td>${Utils.escapeHTML(r.phone) || 'N/A'}</td>
+                        <td><span class="badge bg-warning text-dark">Pending Admin Approval</span></td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-success px-3 me-1" onclick="verifyRestaurant(${r.id}, true)">
+                                <i class="bi bi-check-lg me-1"></i>Approve
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="verifyRestaurant(${r.id}, false)">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-danger text-center py-4">${e.message}</td></tr>`;
+            }
+        }
+
+        async function verifyRestaurant(id, approve) {
+            try {
+                await apiRequest(`/admin/restaurants/${id}/verify?approve=${approve}`, 'PUT');
+                showToast(`Restaurant ${approve ? 'approved and live!' : 'rejected.'}`, 'success');
+                loadPendingRestaurants();
+                loadAdminStats();
+            } catch (e) {
+                alert('Verification error: ' + e.message);
+            }
+        }
+
+        async function loadUsers() {
+            const tbody = document.getElementById('usersTableBody');
+            try {
+                const list = await apiRequest('/admin/users');
+                allUsers = list || [];
+                tbody.innerHTML = list.map(u => {
+                    const isAdmin = u.role === 'ROLE_ADMIN';
+                    const roleBadge = isAdmin
+                        ? '<span class="badge bg-danger"><i class="bi bi-shield-lock me-1"></i>ADMIN</span>'
+                        : `<span class="badge bg-primary-subtle text-primary border">${u.role.replace('ROLE_', '')}</span>`;
+
+                    const promoteBtn = !isAdmin
+                        ? `<button class="btn btn-sm btn-outline-primary ms-1" onclick="promoteToAdmin(${u.id})" title="Grant Admin Rights"><i class="bi bi-shield-plus me-1"></i>Make Admin</button>`
+                        : '';
+
+                    return `
+                        <tr>
+                            <td>#${u.id}</td>
+                            <td><strong>${Utils.escapeHTML(u.name)}</strong></td>
+                            <td>${Utils.escapeHTML(u.email)}</td>
+                            <td>${Utils.escapeHTML(u.phone) || 'N/A'}</td>
+                            <td>${roleBadge}</td>
+                            <td>
+                                <span class="badge ${u.enabled ? 'bg-success' : 'bg-danger'}">${u.enabled ? 'Active' : 'Disabled'}</span>
+                            </td>
+                            <td class="text-end">
+                                <button class="btn btn-sm ${u.enabled ? 'btn-outline-danger' : 'btn-outline-success'}" onclick="toggleUser(${u.id})">
+                                    ${u.enabled ? 'Disable' : 'Enable'}
+                                </button>
+                                ${promoteBtn}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-danger text-center py-4">${e.message}</td></tr>`;
+            }
+        }
+
+        async function submitAddAdmin(e) {
+            e.preventDefault();
+            const btn = document.getElementById('saveAdminBtn');
+            const errDiv = document.getElementById('addAdminError');
+            errDiv.classList.add('d-none');
+            errDiv.textContent = '';
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Creating...';
+
+            const payload = {
+                name: document.getElementById('adminName').value.trim(),
+                email: document.getElementById('adminEmail').value.trim(),
+                phone: document.getElementById('adminPhone').value.trim() || '+1 555-0100',
+                password: document.getElementById('adminPass').value,
+                role: 'ROLE_ADMIN'
+            };
+
+            try {
+                const result = await apiRequest('/admin/create-admin', 'POST', payload);
+                showToast(`Ã¢Å“â€¦ Admin account for "${result.name}" created successfully!`, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('addAdminModal'))?.hide();
+                document.getElementById('addAdminForm').reset();
+                loadUsers();
+            } catch (err) {
+                errDiv.textContent = 'Ã¢ÂÅ’ ' + (err.message || 'Failed to create admin. Please try again.');
+                errDiv.classList.remove('d-none');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-shield-plus me-1"></i>Create Administrator';
+            }
+        }
+
+        async function promoteToAdmin(id) {
+            const user = allUsers.find(u => u.id === id);
+            const name = user ? user.name : 'this user';
+            if (!confirm(`Are you sure you want to promote ${name} to an Administrator? They will have full management permissions.`)) {
+                return;
+            }
+            try {
+                await apiRequest(`/admin/users/${id}/promote-admin`, 'PATCH');
+                showToast(`${name} is now an Administrator!`, 'success');
+                loadUsers();
+            } catch (err) {
+                alert('Failed to promote user: ' + err.message);
+            }
+        }
+
+        async function toggleUser(id) {
+            try {
+                await apiRequest(`/admin/users/${id}/toggle-status`, 'PATCH');
+                showToast('User status updated', 'info');
+                loadUsers();
+            } catch (e) {
+                alert('Action failed: ' + e.message);
+            }
+        }
+
+        async function loadAllOrders() {
+            const tbody = document.getElementById('allOrdersTableBody');
+            try {
+                const list = await apiRequest('/admin/orders');
+                tbody.innerHTML = list.map(o => `
+                    <tr>
+                        <td><strong>#${o.orderNumber}</strong></td>
+                        <td><small class="text-muted">${formatDate(o.placedAt)}</small></td>
+                        <td>${Utils.escapeHTML(o.customerName)}</td>
+                        <td>${Utils.escapeHTML(o.restaurantName)}</td>
+                        <td>${o.deliveryPersonnelName ? Utils.escapeHTML(o.deliveryPersonnelName) : '<span class="text-muted">Unassigned</span>'}</td>
+                        <td class="fw-bold">${formatCurrency(o.totalAmount)}</td>
+                        <td>${getStatusBadge(o.orderStatus)}</td>
+                        <td class="text-end">
+                            <a href="/order-tracking.html?orderNumber=${o.orderNumber}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            ${o.paymentStatus === 'COMPLETED' ? `
+                                <button class="btn btn-sm btn-outline-danger ms-1" onclick="issueRefund(${o.id}, '${o.orderNumber}')" title="Issue refund">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </button>
+                            ` : ''}
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-danger text-center py-4">${e.message}</td></tr>`;
+            }
+        }
+
+        async function issueRefund(orderId, orderNumber) {
+            const reason = prompt(`Refund reason for order #${orderNumber}:`);
+            if (!reason || !reason.trim()) return;
+            try {
+                await apiRequest(`/admin/orders/${orderId}/refund`, 'POST', { reason: reason.trim() });
+                showToast(`Refund issued for order #${orderNumber}.`, 'success');
+                loadAllOrders();
+            } catch (error) {
+                alert('Refund failed: ' + error.message);
+            }
+        }
+
+        async function loadComplaints() {
+            const tbody = document.getElementById('complaintsTableBody');
+            try {
+                const list = await apiRequest('/complaints');
+                if (list.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="text-muted text-center py-4">No complaints reported.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = list.map(c => `
+                    <tr>
+                        <td>#${c.id}</td>
+                        <td><strong>${Utils.escapeHTML(c.customerName)}</strong><br><small class="text-muted">${Utils.escapeHTML(c.customerEmail)}</small></td>
+                        <td>#${c.orderNumber || 'N/A'}</td>
+                        <td>
+                            <strong>${Utils.escapeHTML(c.subject)}</strong>
+                            <p class="text-muted small m-0 text-truncate" style="max-width: 250px;">${Utils.escapeHTML(c.description)}</p>
+                        </td>
+                        <td>
+                            <span class="badge ${c.status === 'RESOLVED' ? 'bg-success' : c.status === 'OPEN' ? 'bg-danger' : 'bg-warning text-dark'}">${Utils.escapeHTML(c.status)}</span>
+                        </td>
+                        <td>
+                            <small class="text-muted">${Utils.escapeHTML(c.adminNotes) || 'None yet'}</small>
+                        </td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-bh-primary" onclick="openResolveModal(${c.id})">
+                                Resolve
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-danger text-center py-4">${e.message}</td></tr>`;
+            }
+        }
+
+        function openResolveModal(id) {
+            document.getElementById('resolveComplaintId').value = id;
+            document.getElementById('resolveAdminNotes').value = '';
+            new bootstrap.Modal(document.getElementById('resolveComplaintModal')).show();
+        }
+
+        async function confirmResolveComplaint() {
+            const id = document.getElementById('resolveComplaintId').value;
+            const status = document.getElementById('resolveStatusSelect').value;
+            const adminNotes = document.getElementById('resolveAdminNotes').value.trim();
+
+            try {
+                await apiRequest(`/complaints/${id}/resolve`, 'PUT', { status, adminNotes });
+                showToast('Complaint updated successfully!', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('resolveComplaintModal')).hide();
+                loadComplaints();
+                loadAdminStats();
+            } catch (e) {
+                alert('Resolution error: ' + e.message);
+            }
+        }
+
+        async function loadCoupons() {
+            const tbody = document.getElementById('couponsTableBody');
+            try {
+                const list = await apiRequest('/coupons');
+                tbody.innerHTML = list.map(c => `
+                    <tr>
+                        <td><span class="badge bg-dark font-monospace fs-6">${c.code}</span></td>
+                        <td class="fw-bold">${c.discountType === 'PERCENTAGE' ? c.discountValue + '%' : formatCurrency(c.discountValue)}</td>
+                        <td>${formatCurrency(c.minOrderAmount)}</td>
+                        <td>${formatCurrency(c.maxDiscountAmount)}</td>
+                        <td>${c.timesUsed} / ${c.usageLimit}</td>
+                        <td>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" ${c.active ? 'checked' : ''} onchange="toggleCoupon(${c.id})">
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteCoupon(${c.id})"><i class="bi bi-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-danger text-center py-4">${e.message}</td></tr>`;
+            }
+        }
+
+        function openAddCouponModal() {
+            document.getElementById('addCouponForm').reset();
+            new bootstrap.Modal(document.getElementById('addCouponModal')).show();
+        }
+
+        async function handleCreateCoupon(e) {
+            e.preventDefault();
+            const payload = {
+                code: document.getElementById('cpnCode').value.trim(),
+                discountType: document.getElementById('cpnType').value,
+                discountValue: parseFloat(document.getElementById('cpnValue').value),
+                minOrderAmount: parseFloat(document.getElementById('cpnMin').value || 0),
+                maxDiscountAmount: parseFloat(document.getElementById('cpnMax').value || 100),
+                usageLimit: parseInt(document.getElementById('cpnLimit').value || 500),
+                active: true
+            };
+
+            try {
+                await apiRequest('/coupons', 'POST', payload);
+                showToast('Coupon created successfully!', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('addCouponModal')).hide();
+                loadCoupons();
+            } catch (err) {
+                alert('Creation failed: ' + err.message);
+            }
+        }
+
+        async function toggleCoupon(id) {
+            try {
+                await apiRequest(`/coupons/${id}/toggle`, 'PATCH');
+                showToast('Coupon status updated', 'info');
+            } catch (e) {
+                alert('Toggle error: ' + e.message);
+            }
+        }
+
+        async function deleteCoupon(id) {
+            if (confirm('Delete this coupon code?')) {
+                try {
+                    await apiRequest(`/coupons/${id}`, 'DELETE');
+                    showToast('Coupon deleted', 'info');
+                    loadCoupons();
+                } catch (e) {
+                    alert('Delete error: ' + e.message);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

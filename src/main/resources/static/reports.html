@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BiteHub - Platform Analytics & Reports</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="/css/style.css" rel="stylesheet">
+    <style>
+        @media print {
+            .navbar, .btn, footer, .no-print { display: none !important; }
+            body { background: white !important; }
+            .bh-card { box-shadow: none !important; border: 1px solid #ddd !important; }
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+    <!-- Header Navigation Container -->
+    <div id="navbar-container"></div>
+
+    <main class="container my-5">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+            <div>
+                <h2 class="fw-extrabold text-dark m-0"><i class="bi bi-bar-chart-line-fill text-primary me-2"></i>Performance & Sales Reports</h2>
+                <p class="text-muted small m-0">University Web Development Project - System Analytics</p>
+            </div>
+            <div class="d-flex gap-2 no-print">
+                <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="window.print()">
+                    <i class="bi bi-printer me-1"></i>Print Report
+                </button>
+                <button class="btn btn-bh-primary btn-sm rounded-pill px-3" onclick="loadAllReports()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh Data
+                </button>
+            </div>
+        </div>
+
+        <!-- Report Tabs -->
+        <div class="row g-4">
+            <!-- 1. Daily / Weekly / Monthly Sales Breakdown -->
+            <div class="col-lg-8">
+                <div class="bh-card p-4 mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold m-0"><i class="bi bi-calendar3 text-primary me-2"></i>Order Volume & Sales Summary</h5>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <input type="radio" class="btn-check" name="periodRadio" id="periodDaily" checked onchange="switchPeriod('daily')">
+                            <label class="btn btn-outline-primary" for="periodDaily">Daily (7 Days)</label>
+
+                            <input type="radio" class="btn-check" name="periodRadio" id="periodWeekly" onchange="switchPeriod('weekly')">
+                            <label class="btn btn-outline-primary" for="periodWeekly">Weekly</label>
+
+                            <input type="radio" class="btn-check" name="periodRadio" id="periodMonthly" onchange="switchPeriod('monthly')">
+                            <label class="btn btn-outline-primary" for="periodMonthly">Monthly</label>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Period / Date</th>
+                                    <th class="text-center">Total Orders</th>
+                                    <th class="text-end">Delivered Revenue</th>
+                                </tr>
+                            </thead>
+                            <tbody id="salesReportTableBody">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Restaurant Performance Leaderboard -->
+                <div class="bh-card p-4">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-award-fill text-warning me-2"></i>Restaurant Performance & Revenue Ranking</h5>
+                    <div class="table-responsive">
+                        <table class="table align-middle table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Restaurant</th>
+                                    <th>Cuisine</th>
+                                    <th class="text-center">Orders</th>
+                                    <th class="text-center">Delivered</th>
+                                    <th class="text-center">Cancelled</th>
+                                    <th>Rating</th>
+                                    <th class="text-end">Revenue</th>
+                                </tr>
+                            </thead>
+                            <tbody id="restaurantPerfTableBody">
+                                <!-- Dynamic restaurant rankings -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Most Ordered Food Items -->
+            <div class="col-lg-4">
+                <div class="bh-card p-4">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-fire text-danger me-2"></i>Most Ordered Food Items</h5>
+                    <p class="text-muted small">Top selling dishes across the entire BiteHub network</p>
+
+                    <div id="topDishesList" class="d-flex flex-column gap-3 mt-3">
+                        <p class="text-muted small text-center py-4">Loading top items...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center small text-secondary">
+            &copy; 2026 BiteHub Food Delivery Management System. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- BiteHub Core API JS -->
+    <script src="/js/api.js"></script>
+    <script>
+        let currentPeriod = 'daily';
+        let reportData = {
+            daily: [],
+            weekly: [],
+            monthly: []
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderNavbar('reports');
+            if (!Auth.requireAuth(['ROLE_ADMIN', 'ROLE_RESTAURANT'])) return;
+
+            loadAllReports();
+        });
+
+        async function loadAllReports() {
+            loadSalesReport();
+            loadTopItems();
+            loadRestaurantPerformance();
+        }
+
+        async function loadSalesReport() {
+            const tbody = document.getElementById('salesReportTableBody');
+            tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div> Loading...</td></tr>`;
+
+            try {
+                reportData[currentPeriod] = await apiRequest(`/reports/${currentPeriod}`);
+                renderSalesTable(reportData[currentPeriod]);
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="3" class="text-danger py-4 text-center">${err.message}</td></tr>`;
+            }
+        }
+
+        function switchPeriod(period) {
+            currentPeriod = period;
+            loadSalesReport();
+        }
+
+        function renderSalesTable(data) {
+            const tbody = document.getElementById('salesReportTableBody');
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted">No sales recorded for this period.</td></tr>`;
+                return;
+            }
+
+            let totalOrdersSum = 0;
+            let totalRevenueSum = 0;
+
+            let html = data.map(row => {
+                totalOrdersSum += row.totalOrders;
+                totalRevenueSum += row.totalRevenue;
+                return `
+                    <tr>
+                        <td><strong>${row.period}</strong></td>
+                        <td class="text-center"><span class="badge bg-light text-dark border px-3 py-1">${row.totalOrders}</span></td>
+                        <td class="text-end fw-bold text-dark">${formatCurrency(row.totalRevenue)}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            html += `
+                <tr class="table-light fw-bold">
+                    <td>TOTAL SUMMARY</td>
+                    <td class="text-center">${totalOrdersSum}</td>
+                    <td class="text-end text-primary fs-6">${formatCurrency(totalRevenueSum)}</td>
+                </tr>
+            `;
+
+            tbody.innerHTML = html;
+        }
+
+        async function loadTopItems() {
+            const container = document.getElementById('topDishesList');
+            try {
+                const list = await apiRequest('/reports/top-items?limit=7');
+                if (!list || list.length === 0) {
+                    container.innerHTML = `<p class="text-muted small text-center py-4">No order items data yet.</p>`;
+                    return;
+                }
+
+                const maxQty = Math.max(...list.map(i => i.totalQuantity), 1);
+
+                container.innerHTML = list.map((item, index) => {
+                    const pct = Math.round((item.totalQuantity / maxQty) * 100);
+                    return `
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold small text-dark">${index + 1}. ${Utils.escapeHTML(item.itemName)}</span>
+                                <span class="fw-bold text-primary small">${item.totalQuantity} sold</span>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: ${pct}%"></div>
+                            </div>
+                            <div class="d-flex justify-content-between small text-muted mt-1" style="font-size: 0.75rem;">
+                                <span>Revenue generated:</span>
+                                <strong>${formatCurrency(item.totalRevenue)}</strong>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                container.innerHTML = `<p class="text-danger small">${err.message}</p>`;
+            }
+        }
+
+        async function loadRestaurantPerformance() {
+            const tbody = document.getElementById('restaurantPerfTableBody');
+            try {
+                const list = await apiRequest('/reports/restaurant-performance');
+                if (!list || list.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">No restaurant records available.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = list.map(r => `
+                    <tr>
+                        <td><strong>${Utils.escapeHTML(r.restaurantName)}</strong></td>
+                        <td><span class="badge bg-light text-dark border">${Utils.escapeHTML(r.cuisineType)}</span></td>
+                        <td class="text-center">${r.totalOrders}</td>
+                        <td class="text-center text-success fw-bold">${r.completedOrders}</td>
+                        <td class="text-center text-danger">${r.cancelledOrders}</td>
+                        <td><i class="bi bi-star-fill text-warning me-1"></i>${r.rating ? r.rating.toFixed(1) : '4.5'}</td>
+                        <td class="text-end fw-bold text-primary">${formatCurrency(r.totalRevenue)}</td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-danger text-center py-4">${err.message}</td></tr>`;
+            }
+        }
+    </script>
+</body>
+</html>

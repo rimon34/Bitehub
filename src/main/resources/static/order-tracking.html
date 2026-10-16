@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BiteHub - Track Order</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS for Live Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Custom CSS -->
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+    <!-- Header Navigation Container -->
+    <div id="navbar-container"></div>
+
+    <main class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-9">
+                <!-- Status & Progress Card -->
+                <div class="bh-card p-4 p-md-5 mb-4 shadow-sm" id="trackingCard">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="text-muted mt-2">Locating order status...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Cancel Order Confirmation Modal -->
+    <div class="modal fade" id="cancelOrderModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Cancel Order</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small">Are you sure you want to cancel this order? Once cancelled, this action cannot be undone.</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Reason for Cancellation</label>
+                        <select id="cancelReasonSelect" class="form-select mb-2" onchange="handleReasonChange()">
+                            <option value="Changed my mind">Changed my mind</option>
+                            <option value="Ordered by mistake">Ordered by mistake</option>
+                            <option value="Delivery time too long">Delivery time too long</option>
+                            <option value="Incorrect address entered">Incorrect address entered</option>
+                            <option value="Other">Other reason...</option>
+                        </select>
+                        <textarea id="customCancelReason" class="form-control" rows="2" placeholder="Describe reason..." style="display: none;"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Keep Order</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmCancelOrder()">Confirm Cancellation</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center small text-secondary">
+            &copy; 2026 BiteHub Food Delivery Management System. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Leaflet JS for Live Map -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- BiteHub Core API JS -->
+    <script src="/js/api.js"></script>
+    <!-- BiteHub shared map helpers -->
+    <script src="/js/map.js"></script>
+    <script>
+        let currentOrder = null;
+        let pollTimer = null;
+        let mapInstance = null;
+        let restMarker = null;
+        let destMarker = null;
+        let riderMarker = null;
+        let routeLine = null;
+        let liveLocation = null;
+        let currentCoords = null;
+
+        const STEPS = [
+            { key: 'PLACED', label: 'Order Placed', icon: 'bi-bag-check' },
+            { key: 'CONFIRMED', label: 'Confirmed', icon: 'bi-patch-check' },
+            { key: 'PREPARING', label: 'Preparing', icon: 'bi-fire' },
+            { key: 'READY_FOR_PICKUP', label: 'Ready for Pickup', icon: 'bi-box-seam' },
+            { key: 'OUT_FOR_DELIVERY', label: 'Out for Delivery', icon: 'bi-bicycle' },
+            { key: 'DELIVERED', label: 'Delivered', icon: 'bi-check2-all' }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderNavbar('orders');
+            const params = new URLSearchParams(window.location.search);
+            const orderNumber = params.get('orderNumber');
+            const orderId = params.get('id');
+
+            if (!orderNumber && !orderId) {
+                window.location.href = '/order-history.html';
+                return;
+            }
+
+            fetchOrder(orderNumber, orderId);
+            window.addEventListener('bitehub:order-updated', event => {
+                if (event.detail && ((!orderId && event.detail.orderNumber === orderNumber) || String(event.detail.id) === String(orderId))) {
+                    fetchOrder(orderNumber, orderId, true);
+                }
+            });
+
+            // Auto poll every 4 seconds for real-time status and live map updates
+            pollTimer = setInterval(() => {
+                fetchOrder(orderNumber, orderId, true);
+            }, 4000);
+        });
+
+        async function fetchOrder(orderNumber, orderId, silent = false) {
+            try {
+                let endpoint = orderNumber ? `/orders/number/${orderNumber}` : `/orders/${orderId}`;
+                currentOrder = await apiRequest(endpoint);
+                if (currentOrder.deliveryPersonnelId && (currentOrder.orderStatus === 'OUT_FOR_DELIVERY' || currentOrder.orderStatus === 'DELIVERED')) {
+                    liveLocation = await apiRequest(`/deliveries/orders/${currentOrder.id}/location`);
+                } else {
+                    liveLocation = null;
+                }
+                renderTracking(currentOrder);
+                
+                if (currentOrder.orderStatus === 'DELIVERED' || currentOrder.orderStatus === 'CANCELLED') {
+                    if (pollTimer) clearInterval(pollTimer);
+                }
+            } catch (err) {
+                if (pollTimer) clearInterval(pollTimer);
+                if (!silent) {
+                    document.getElementById('trackingCard').innerHTML = `
+                        <div class="alert alert-danger text-center">
+                            <h5>Order Not Found</h5>
+                            <p class="small mb-3">${err.message}</p>
+                            <a href="/order-history.html" class="btn btn-outline-secondary btn-sm">Go to My Orders</a>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function renderTracking(order) {
+            const card = document.getElementById('trackingCard');
+            const isCancelled = order.orderStatus === 'CANCELLED';
+
+            // Find step index
+            let activeIndex = STEPS.findIndex(s => s.key === order.orderStatus);
+            if (isCancelled) activeIndex = -1;
+
+            let timelineHtml = '';
+            if (isCancelled) {
+                timelineHtml = `
+                    <div class="alert alert-danger text-center p-4 my-4 rounded-4">
+                        <i class="bi bi-x-circle-fill fs-1 text-danger d-block mb-2"></i>
+                        <h4 class="fw-bold">Order Cancelled</h4>
+                        <p class="m-0 text-muted">Reason: ${order.cancellationReason || 'Cancelled by user or restaurant.'}</p>
+                        ${order.paymentStatus === 'REFUNDED' ? '<span class="badge bg-success mt-2">Payment Refunded</span>' : ''}
+                    </div>
+                `;
+            } else {
+                timelineHtml = `
+                    <div class="timeline-steps">
+                        ${STEPS.map((step, idx) => {
+                            let statusClass = '';
+                            if (idx < activeIndex) statusClass = 'completed';
+                            else if (idx === activeIndex) statusClass = 'active';
+
+                            return `
+                                <div class="timeline-step ${statusClass}">
+                                    <div class="timeline-icon">
+                                        <i class="bi ${step.icon}"></i>
+                                    </div>
+                                    <div class="timeline-label">${step.label}</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+
+            const canCancel = (order.orderStatus === 'PLACED' || order.orderStatus === 'CONFIRMED') && !isCancelled;
+
+            // If map container already exists, just update live contents
+            const existingMapDiv = document.getElementById('trackingMap');
+            if (existingMapDiv && mapInstance) {
+                document.getElementById('statusBadgeContainer').innerHTML = getStatusBadge(order.orderStatus);
+                document.getElementById('timelineContainer').innerHTML = timelineHtml;
+                updateMapMarkers(order);
+                return;
+            }
+
+            card.innerHTML = `
+                <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-4 gap-2">
+                    <div>
+                        <span class="badge bg-light text-dark border mb-1">Order #${order.orderNumber}</span>
+                        <h3 class="fw-extrabold text-dark m-0">Live Order Tracking</h3>
+                        <small class="text-muted">Placed on ${formatDate(order.placedAt)}</small>
+                    </div>
+                    <div id="statusBadgeContainer">
+                        ${getStatusBadge(order.orderStatus)}
+                    </div>
+                </div>
+
+                <div id="timelineContainer">
+                    ${timelineHtml}
+                </div>
+
+                <!-- Live Map Card -->
+                <div class="my-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-bold small text-dark"><i class="bi bi-geo-alt-fill text-danger me-1"></i>Live GPS Delivery Route</span>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 small">
+                            <span class="spinner-grow spinner-grow-sm me-1" style="width: 0.5rem; height: 0.5rem;"></span>Live Tracking
+                        </span>
+                    </div>
+                    <div id="trackingMap" style="height: 360px; width: 100%; border-radius: 12px; z-index: 1;" class="border shadow-sm"></div>
+                    <div class="d-flex flex-wrap gap-3 align-items-center mt-3 small">
+                        <span class="d-inline-flex align-items-center gap-1 text-muted"><span class="bh-map-dot" style="background:#EF4444"></span>Restaurant</span>
+                        <span class="d-inline-flex align-items-center gap-1 text-muted"><span class="bh-map-dot" style="background:#3B82F6"></span>Delivery rider</span>
+                        <span class="d-inline-flex align-items-center gap-1 text-muted"><span class="bh-map-dot" style="background:#10B981"></span>Customer</span>
+                        <span id="riderStatusText" class="ms-auto text-muted"><i class="bi bi-clock text-warning me-1"></i>Preparing in kitchen</span>
+                    </div>
+                </div>
+
+                <div class="row g-4 mt-2">
+                    <!-- Delivery & Rider Info -->
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3 border h-100">
+                            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Delivery Destination</h6>
+                            <p class="small text-muted mb-2"><strong>Address:</strong> ${Utils.escapeHTML(order.deliveryAddressText)}</p>
+                            <p class="small text-muted mb-2"><strong>Phone:</strong> ${Utils.escapeHTML(order.customerPhone) || 'N/A'}</p>
+                            ${order.specialInstructions ? `<p class="small text-muted mb-2"><strong>Notes:</strong> ${Utils.escapeHTML(order.specialInstructions)}</p>` : ''}
+                            
+                            <hr class="my-3">
+                            <h6 class="fw-bold text-dark mb-2"><i class="bi bi-bicycle text-primary me-2"></i>Assigned Rider</h6>
+                            ${order.deliveryPersonnelName ? `
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="bg-primary text-white rounded-circle p-2" style="width: 40px; height: 40px; display:flex; align-items:center; justify-content:center;">
+                                        <i class="bi bi-person-fill"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold small text-dark">${Utils.escapeHTML(order.deliveryPersonnelName)}</div>
+                                        <div class="text-muted" style="font-size: 0.75rem;">${Utils.escapeHTML(order.vehicleType) || 'Motorcycle'} &bull; ${Utils.escapeHTML(order.deliveryPersonnelPhone) || 'Contact Delivery'}</div>
+                                    </div>
+                                </div>
+                            ` : `
+                                <small class="text-muted">Delivery partner will be assigned once food is ready for pickup.</small>
+                            `}
+                        </div>
+                    </div>
+
+                    <!-- Order Summary -->
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3 border h-100 d-flex flex-column">
+                            <h6 class="fw-bold text-dark mb-2"><i class="bi bi-receipt me-2 text-primary"></i>${Utils.escapeHTML(order.restaurantName)}</h6>
+                            <div class="d-flex flex-column gap-1 mb-3 flex-grow-1" style="max-height: 160px; overflow-y: auto;">
+                                ${order.items.map(item => `
+                                    <div class="d-flex justify-content-between small text-muted">
+                                        <span>${item.quantity}x ${Utils.escapeHTML(item.itemName)}</span>
+                                        <span>${formatCurrency(item.subtotal)}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <hr class="my-2">
+                            <div class="d-flex justify-content-between small text-muted mb-1">
+                                <span>Subtotal</span>
+                                <span>${formatCurrency(order.subtotal)}</span>
+                            </div>
+                            <div class="d-flex justify-content-between small text-muted mb-1">
+                                <span>Delivery Fee</span>
+                                <span>${formatCurrency(order.deliveryFee)}</span>
+                            </div>
+                            ${order.discountAmount > 0 ? `
+                                <div class="d-flex justify-content-between small text-success mb-1">
+                                    <span>Discount (${Utils.escapeHTML(order.appliedCouponCode) || 'Coupon'})</span>
+                                    <span>-${formatCurrency(order.discountAmount)}</span>
+                                </div>
+                            ` : ''}
+                            <div class="d-flex justify-content-between fw-bold text-dark fs-5 mt-1">
+                                <span>Total (${order.paymentMethod.replace(/_/g, ' ')})</span>
+                                <span class="text-primary">${formatCurrency(order.totalAmount)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                    <a href="/order-history.html" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>All Orders</a>
+                    
+                    <div>
+                        ${canCancel ? `
+                            <button class="btn btn-outline-danger btn-sm" onclick="openCancelModal()">
+                                <i class="bi bi-x-circle me-1"></i>Cancel Order
+                            </button>
+                        ` : !isCancelled && order.orderStatus !== 'DELIVERED' ? `
+                            <button class="btn btn-outline-secondary btn-sm" disabled title="Orders in preparation cannot be cancelled">
+                                <i class="bi bi-lock me-1"></i>Cancellation Closed
+                            </button>
+                        ` : ''}
+                        
+                        ${order.orderStatus === 'DELIVERED' ? `
+                            <a href="/order-history.html" class="btn btn-success btn-sm">
+                                <i class="bi bi-star me-1"></i>Rate & Review Dish
+                            </a>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+
+            // Initialize or update the live tracking map
+            initOrUpdateMap(order);
+        }
+
+        function initOrUpdateMap(order) {
+            const mapContainer = document.getElementById('trackingMap');
+            if (!mapContainer || typeof L === 'undefined' || typeof BiteHubMap === 'undefined') return;
+
+            const coords = BiteHubMap.resolve(order);
+            currentCoords = coords;
+
+            if (!mapInstance) {
+                mapInstance = L.map('trackingMap').setView(
+                    [(coords.restaurant[0] + coords.customer[0]) / 2, (coords.restaurant[1] + coords.customer[1]) / 2],
+                    14
+                );
+
+                BiteHubMap.tiles().addTo(mapInstance);
+
+                routeLine = L.polyline(BiteHubMap.route(coords.restaurant, coords.customer), {
+                    color: '#FF5722',
+                    weight: 5,
+                    opacity: 0.75,
+                    dashArray: '8, 10',
+                    lineJoin: 'round'
+                }).addTo(mapInstance);
+
+                restMarker = L.marker(coords.restaurant, { icon: BiteHubMap.icon('restaurant'), zIndexOffset: 200 })
+                    .bindPopup(`<strong>${Utils.escapeHTML(order.restaurantName) || 'Restaurant Kitchen'}</strong><br><small class="text-muted">Food pickup station</small>`)
+                    .addTo(mapInstance);
+
+                destMarker = L.marker(coords.customer, { icon: BiteHubMap.icon('customer'), zIndexOffset: 200 })
+                    .bindPopup(`<strong>Customer</strong><br><small class="text-muted">${Utils.escapeHTML(order.deliveryAddressText) || 'Delivery address'}</small>`)
+                    .addTo(mapInstance);
+
+                // Rider sits above the other pins so it is never hidden underneath.
+                riderMarker = L.marker(coords.restaurant, { icon: BiteHubMap.icon('rider'), zIndexOffset: 1000 })
+                    .addTo(mapInstance);
+
+                mapInstance.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+            } else {
+                restMarker.setLatLng(coords.restaurant);
+                destMarker.setLatLng(coords.customer);
+                routeLine.setLatLngs(BiteHubMap.route(coords.restaurant, coords.customer));
+            }
+
+            updateMapMarkers(order);
+            // The map is mounted inside a freshly injected card, so nudge Leaflet to size itself.
+            setTimeout(() => { if (mapInstance) mapInstance.invalidateSize(); }, 80);
+        }
+
+        function updateMapMarkers(order) {
+            if (!mapInstance || !riderMarker) return;
+
+            const coords = currentCoords || BiteHubMap.resolve(order);
+            const status = order.orderStatus;
+            const hasLiveGps = liveLocation && liveLocation.latitude !== null && liveLocation.longitude !== null;
+
+            // Park the idle rider just beside the kitchen so both pins stay visible.
+            const parked = BiteHubMap.offset(coords.restaurant, 0.0016, 0.0012);
+
+            let targetPos;
+            let popupText;
+            let riderState;
+
+            if (status === 'DELIVERED') {
+                targetPos = coords.customer;
+                popupText = '<strong>Order delivered!</strong><br><small class="text-muted">Enjoy your meal.</small>';
+                riderState = 'delivered';
+            } else if (status === 'OUT_FOR_DELIVERY' && hasLiveGps) {
+                targetPos = [liveLocation.latitude, liveLocation.longitude];
+                popupText = `<strong>Live rider location</strong><br><small class="text-muted">Updated ${formatDate(liveLocation.updatedAt)}</small>`;
+                riderState = 'live';
+            } else if (status === 'OUT_FOR_DELIVERY') {
+                targetPos = parked;
+                popupText = '<strong>Rider is on the way</strong><br><small class="text-muted">Live GPS not shared yet</small>';
+                riderState = 'awaiting-gps';
+            } else if (status === 'READY_FOR_PICKUP') {
+                targetPos = parked;
+                popupText = '<strong>Order ready for rider pickup</strong>';
+                riderState = 'ready';
+            } else if (status === 'CANCELLED') {
+                return;
+            } else {
+                targetPos = parked;
+                popupText = '<strong>Rider at the kitchen</strong><br><small class="text-muted">Waiting for the order to be ready</small>';
+                riderState = 'kitchen';
+            }
+
+            riderMarker.setLatLng(targetPos);
+            riderMarker.bindPopup(popupText);
+
+            const riderText = document.getElementById('riderStatusText');
+            if (riderText) {
+                if (riderState === 'delivered') {
+                    riderText.innerHTML = '<i class="bi bi-check2-circle text-success me-1"></i>Delivered';
+                } else if (riderState === 'live') {
+                    const away = BiteHubMap.formatDistance(BiteHubMap.distanceKm(targetPos, coords.customer));
+                    riderText.innerHTML = `<i class="bi bi-bicycle text-primary me-1"></i>${Utils.escapeHTML(order.deliveryPersonnelName) || 'Rider'} · live GPS${away ? ' · ' + away + ' away' : ''}`;
+                } else if (riderState === 'awaiting-gps') {
+                    riderText.innerHTML = `<i class="bi bi-bicycle text-warning me-1"></i>${Utils.escapeHTML(order.deliveryPersonnelName) || 'Rider'} en route · awaiting GPS`;
+                } else if (riderState === 'ready') {
+                    riderText.innerHTML = '<i class="bi bi-box-seam text-primary me-1"></i>Ready for rider pickup';
+                } else {
+                    riderText.innerHTML = '<i class="bi bi-clock text-warning me-1"></i>Preparing in kitchen';
+                }
+            }
+        }
+
+        function openCancelModal() {
+            const modal = new bootstrap.Modal(document.getElementById('cancelOrderModal'));
+            modal.show();
+        }
+
+        function handleReasonChange() {
+            const val = document.getElementById('cancelReasonSelect').value;
+            document.getElementById('customCancelReason').style.display = val === 'Other' ? 'block' : 'none';
+        }
+
+        async function confirmCancelOrder() {
+            if (!currentOrder) return;
+
+            let reason = document.getElementById('cancelReasonSelect').value;
+            if (reason === 'Other') {
+                reason = document.getElementById('customCancelReason').value.trim() || 'Other reasons';
+            }
+
+            try {
+                await apiRequest(`/orders/${currentOrder.id}/cancel`, 'POST', { reason });
+                showToast('Order has been cancelled.', 'warning');
+                bootstrap.Modal.getInstance(document.getElementById('cancelOrderModal')).hide();
+                fetchOrder(currentOrder.orderNumber, currentOrder.id);
+            } catch (err) {
+                alert('Cancellation failed: ' + err.message);
+            }
+        }
+    </script>
+</body>
+</html>
